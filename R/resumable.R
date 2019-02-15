@@ -64,8 +64,8 @@ resumable <- function(.f,
       FALSE
   }
 
-  .f_resume <- function(x) {
-
+  .f_resume <- function(...) {
+    x <- list(...)
     if(empty_arg_function) x <- "NULL"
 
     if (str$exists(x, ff)) {
@@ -75,7 +75,7 @@ resumable <- function(.f,
       if(empty_arg_function){
         out <- .f()
       }else{
-        out <- .f(x)
+        out <- do.call(.f, x)
       }
 
       if (!skip_if(out)) {
@@ -90,8 +90,8 @@ resumable <- function(.f,
     out
   }
 
-  .f_mod <- function(x) {
-    .f_resume(x)
+  .f_mod <- function(...) {
+    .f_resume(...)
   }
 
   if (details) {

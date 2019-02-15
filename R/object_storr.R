@@ -123,6 +123,12 @@ resumable <- function(.f,
     str <- get_object_storr(path)
   }
   .f <- purrr::as_mapper(.f, ...)
+  # check for no argument function
+  empty_arg_function <- F
+  fer<-function(){}
+  if(identical(args(fer), args(.f))){
+    empty_arg_function <- T
+  }
 
   if (enable_functions_footprinting) {
     ff <- str$hash_object(.f)
@@ -138,10 +144,18 @@ resumable <- function(.f,
   }
 
   .f_resume <- function(x) {
+
+    if(empty_arg_function) x <- "NULL"
+
     if (str$exists(x, ff)) {
       out <- str$get(x, ff)
     } else{
-      out <- .f(x)
+
+      if(empty_arg_function){
+        out <- .f()
+      }else{
+        out <- .f(x)
+      }
 
       if (!skip_if(out)) {
         if (trace_only) {

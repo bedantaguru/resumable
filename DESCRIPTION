@@ -4,8 +4,9 @@ Title: Create resumable functions
 Version: 0.1.0
 Author: Indranil Gayen
 Maintainer: Indranil Gayen <nil.gayen@gmail.com>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Implementation of memoize over one parameter function in R.
+    It works with arbitrary R function taking single non empty argument 
+    (Returning possibly a value which can be stored as rds file and retrieved without any loss of information). 
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

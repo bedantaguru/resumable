@@ -89,6 +89,10 @@ resumable <- function(.f,
     }
     out
   }
+  #@Dev Here : To Do
+  # use attr and class for identification of resumable.
+  # create warning for function mismatch and exsisting directory
+  # use custom print method
 
   .f_mod <- function(...) {
     .f_resume(...)

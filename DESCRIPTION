@@ -5,12 +5,11 @@ Version: 0.1.0
 Author: Indranil Gayen
 Maintainer: Indranil Gayen <nil.gayen@gmail.com>
 Description: Implementation of memoize over any function in R.
-    It works with arbitrary R function  
-    (Returning possibly a value which can be stored as rds file and retrieved without any loss of information). 
+    It works with arbitrary R function. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports:
     storr,
     purrr
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.1

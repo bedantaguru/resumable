@@ -1,23 +1,6 @@
 
 
-
-#' get an object_storr
-#'
-#' @param path the local path where object_storr will be created
-#'
-#' @return The function returns a storr like object (a list) with less functions and a node named "storr_details" which contains two storr_rds objects used for object_storr
-#' @export
-#'
-#' @examples
-#' st <- get_object_storr("test")
-#' st$set(sin, cos)
-#' st$list()
-#' st$get(sin)(pi)
-#' st$destroy()
-#'
-#'
-#' @seealso \link[storr]{storr_rds}
-get_object_storr <- function(path) {
+get_object_cache <- function(path) {
   dir.create(path, showWarnings = F)
 
   stk <- storr::storr_rds(file.path(path, "keys"))

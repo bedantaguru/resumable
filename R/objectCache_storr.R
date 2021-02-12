@@ -1,10 +1,30 @@
 
 
-get_object_cache <- function(path) {
-  dir.create(path, showWarnings = F)
 
-  stk <- storr::storr_rds(file.path(path, "keys"))
-  stv <- storr::storr_rds(file.path(path, "values"))
+
+# need to pur sequentialize here
+get_object_storr <- function(
+  path = tempfile(pattern = "object_storr"),
+  key_storr = function(path){
+    storr::storr_rds(file.path(path, "keys"))
+  },
+  value_storr =  function(path){
+    storr::storr_rds(file.path(path, "values"))
+  })
+{
+
+
+  stk <- NULL
+  stv <- NULL
+
+  create <- function(){
+    dir.create(path, showWarnings = FALSE)
+
+    stk <<- key_storr(path)
+    stv <<- value_storr(path)
+  }
+
+  create()
 
   st <- list()
 
@@ -50,6 +70,12 @@ get_object_cache <- function(path) {
     unlink(path, recursive = T, force = T)
   }
 
+  st$reset <- function(){
+    stk$destroy()
+    stv$destroy()
+    create()
+  }
+
   st$hash_object <- stv$hash_object
 
   st$storr_details <- list(key_storr = stk, value_storr = stv)
@@ -58,5 +84,14 @@ get_object_cache <- function(path) {
 
 }
 
-
-
+# to use thor
+# get_object_storr(
+#   path,
+#   key_storr = function(path){
+#     thor::storr_thor(thor::mdb_env(file.path(path, "keys")))
+#   },
+#   value_storr = function(path){
+#     thor::storr_thor(thor::mdb_env(file.path(path, "values")))
+#   }
+# )
+#

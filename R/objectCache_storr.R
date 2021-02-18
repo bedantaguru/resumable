@@ -155,7 +155,8 @@ object_cache_alt_thor <- function(path){
       },
       value_storr = function(path){
         thor::storr_thor(thor::mdb_env(file.path(path, "values")))
-      }
+      },
+      sequentialize_set = TRUE
     )
   )
 }

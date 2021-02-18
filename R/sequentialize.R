@@ -11,6 +11,10 @@ sequentialize <- function(fun, root_path, env = environment(fun)){
     stop("sequentialize is meant for a function.", call. = FALSE)
   }
 
+  if(is_sequentialized(fun)){
+    cat("Already sequentialized\n")
+    return(fun)
+  }
 
   fun_formals <- formals(fun)
 
@@ -85,4 +89,8 @@ print.sequentialized <- function(x, ...) {
     error = function(e){
       stop("No function found / session terminated!", call. = FALSE)
     })
+}
+
+is_sequentialized <- function(x){
+  inherits(x,"sequentialized") & isTRUE(attr(x, "sequentialized"))
 }

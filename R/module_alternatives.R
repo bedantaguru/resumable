@@ -22,6 +22,11 @@ alternatives <- function(method_name,
                          scope) {
   if(!is.character(method_name)){
     method_name <- as.character(substitute(method_name))
+    if(method_name[1]=="::"){
+      # many things need to be done here
+      # but leaving with simple things here
+      method_name <- method_name[3]
+    }
   }
 
   if(!missing(implement)){
@@ -43,7 +48,10 @@ alternatives <- function(method_name,
   }
   alts <- get_alternatives(method_name)
 
-  alts[c("name","desc")]
+  alts <- alts[c("name","desc")]
+  aln <- get_configured_alternatives(method_name, details = TRUE)
+  alts$in_use <- alts$name == aln$name
+  alts
 }
 
 alternatives_install <- function(method_name, alt_name) {
@@ -224,7 +232,7 @@ check_alternatives_data <- function(alts){
   alts$is_usable <- alts$meta.dep.packages_is_installed
 
   alts$select_score <- ifelse(alts$is_usable, 1, 0)*(
-    alts$is_recommended*5+alts$is_base*2
+    alts$is_recommended*5+alts$is_base*2+1
   )
   alts
 }
@@ -256,53 +264,65 @@ get_alternatives <- function(method_name, only_uable = FALSE) {
   alts
 }
 
-get_configured_alternatives <- function(method_name) {
+get_configured_alternatives <- function(method_name, details = FALSE) {
 
   alts_valid <- get_alternatives(method_name, only_uable = TRUE)
 
   found_alt <- FALSE
   alt_name <- ""
 
+  priority <- c("file_system", "session")
+  # priority can be altered easily by priority <- c("session", "file_system")
+  # TODO maybe that can be kept as a configuration to the alternatives itself.
 
-  if(!found_alt){
-    if(exists(
-      paste0(method_name,"_alternatives_in_use"),
-      envir = alternatives_env
-    )){
 
-      alt_name_try <- get(paste0(method_name,"_alternatives_in_use"),
-                          envir = alternatives_env)
+  while(length(priority)>0){
 
-      if(alt_name_try %in% alts_valid$name){
-        found_alt <- TRUE
-        alt_name <- alt_name_try
+    if(!found_alt & priority[1] == "session"){
+      if(exists(
+        paste0(method_name,"_alternatives_in_use"),
+        envir = alternatives_env
+      )){
+
+        alt_name_try <- get(paste0(method_name,"_alternatives_in_use"),
+                            envir = alternatives_env)
+
+        if(alt_name_try %in% alts_valid$name){
+          found_alt <- TRUE
+          alt_name <- alt_name_try
+        }
+
       }
-
     }
+
+    if(!found_alt & priority[1] == "file_system"){
+      if (exists("persistent_object_store",
+                 envir = parent.env(environment()))) {
+        # in this case custom method will be implemented in all subsequent sessions
+        # unless changed again
+
+        pos_alt <- persistent_object_store(appname = "alternatives")
+        alt_name_try <- pos_alt$read(method_name)
+
+        if(is.null(alt_name_try)) alt_name_try <- ""
+
+        if(alt_name_try %in% alts_valid$name){
+          found_alt <- TRUE
+          alt_name <- alt_name_try
+
+          # store it for faster access
+          assign(paste0(method_name,"_alternatives_in_use"), alt_name,
+                 envir = alternatives_env)
+        }
+
+      }
+    }
+
+    priority <- priority[-1]
+
   }
 
-  if(!found_alt){
-    if (exists("persistent_object_store",
-               envir = parent.env(environment()))) {
-      # in this case custom method will be implemented in all subsequent sessions
-      # unless changed again
 
-      pos_alt <- persistent_object_store(appname = "alternatives")
-      alt_name_try <- pos_alt$read(method_name)
-
-      if(is.null(alt_name_try)) alt_name_try <- ""
-
-      if(alt_name_try %in% alts_valid$name){
-        found_alt <- TRUE
-        alt_name <- alt_name_try
-
-        # store it for faster access
-        assign(paste0(method_name,"_alternatives_in_use"), alt_name,
-               envir = alternatives_env)
-      }
-
-    }
-  }
 
   if(!found_alt){
     alt_name_try <- auto_select_alternatives(method_name)
@@ -313,7 +333,12 @@ get_configured_alternatives <- function(method_name) {
   }
 
   if(found_alt){
-    alts_valid[alts_valid$name==alt_name,]$alt_name_fn[[1]]
+    if(details){
+      alts_valid[alts_valid$name==alt_name,]
+    }else{
+      alts_valid[alts_valid$name==alt_name,]$alt_name_fn[[1]]
+    }
+
   }else{
     stop("No alternatives found.", call. = FALSE)
   }

@@ -119,9 +119,82 @@ thor::storr_thor()
 #
 #
 
+
+
+
 cl <- parallel::makeCluster(parallel::detectCores())
 
 parallel::clusterApply(cl, 1:10, function(x) Sys.getpid())
+
+#require(resumable)
+
+resumable:::alternatives(resumable::object_cache, use = "cachem")
+resumable:::alternatives(resumable::object_cache, use = "memoise")
+resumable:::alternatives(resumable::object_cache, use = "POS")
+resumable:::alternatives(resumable::object_cache, use = "storr")
+resumable:::alternatives(resumable::object_cache, use = "thor")
+resumable:::alternatives(resumable::object_cache, use = "singletonFile")
+
+
+parallel::clusterApply(cl, 1:3, function(x){
+
+  resumable:::alternatives(resumable::object_cache)
+})
+
+
+unlink(".test", recursive = T, force = T)
+parallel::clusterApply(cl, 1:10, function(x){
+  oc <- resumable::object_cache(".test")
+  oc$set(x, x)
+})
+
+oc <- resumable::object_cache(".test")
+identical(sort(unlist(oc$list_keys())), 1:10)
+
+parallel::clusterApply(cl, 1:100, function(x){
+  oc <- resumable::object_cache(".test")
+  oc$set(x, x)
+})
+
+oc <- resumable::object_cache(".test")
+identical(sort(unlist(oc$list_keys())), 1:100)
+
+setdiff(1:100, sort(unlist(oc$list_keys())))
+
+
+
+f0 <- function(x){
+  x
+}
+
+f1 <- resumable(f0, root_path = ".test")
+
+parallel::clusterApply(cl, 1:100, f1)
+parallel::clusterApply(cl, 1:100, function(x, f){try(f(x))}, f=f1)
+
+parallel::clusterApply(cl, 1:100, function(x){
+
+  f0 <- function(x){
+    x
+  }
+
+
+
+  tryCatch({
+    f1 <- resumable::resumable(f0, root_path = ".test")
+    f1(x)
+    }, error =function(e) e)
+})
+
+
+parallel::clusterApply(cl, 1:100, function(x, ff){
+  tryCatch({
+    # f1 <- resumable::resumable(f0, root_path = ".test")
+    # f1(x)
+    ff(x)
+  }, error =function(e) e)
+}, ff = f1)
+
 
 
 f0 <- function(x){
@@ -146,5 +219,4 @@ write("0", file = "test")
 parallel::clusterApply(cl, 1:10, f1)
 
 readLines("test")
-
 

@@ -1,116 +1,119 @@
-#' Create a resumable function
-#'
-#' @param .f a function or a formula similar to what is used in purrr package
-#' @param path a local path where and object_storr will be created for storing the function outcomes
-#' @param enable_functions_footprinting Logical value. If set to \code{TRUE} the resumable function will be liked to source code of the input function. Default value in \code{FALSE}.
-#' @param trace_only Logical value. If set to \code{TRUE} the resumable function does not store any output (just NULL or 0). It may be useful for situation where only external activity is performed. Default value in \code{FALSE}.
-#' @param clean_on_start Logical value. If set to \code{TRUE} then the cached values will be cleaned on start. Default value in \code{FALSE}.
-#' @param skip_if a function or a formula similar to what is used in purrr package which should return a locgical scaler. If this returns \code{TRUE} the value will not be stored. Ignore if not required.
-#' @param details Logical value indicating whether the object_storr and resumable function both are required or not. Default value in \code{FALSE}.
-#' @param ... other params to be passed to \code{.f} (at present this is not working properly. Directly use purrr type formula.)
-#'
-#' @return If \code{details} is \code{TRUE} it returns a list with resumable function and corresponding object_storr. Otherwise it will return only resumable function.
-#' @details This function is fully compatible in parallel processing. This is similar to \link[storr]{storr_external}. However, this is applicable to arbitrary user defined functions. Note here numeric and integer will be treated as different entity as input. (Means f(10) and f(10L) (f is a resumable function) both will evalute first even though the input function is indifferent.)
 #' @export
-#'
-#' @examples
-#' slow <- function(x){
-#'   print("calc")
-#'   x^2
-#' }
-#'
-#' slowr <- resumable(slow, "test")
-#'
-#' # first time the values will be caluculated and stored
-#' purrr::map(seq(10), slowr)
-#'
-#' # this time the cached values are coming
-#' purrr::map(seq(10), slowr)
-#'
-#'
-#' @seealso \link[storr]{storr_external}
-resumable <- function(.f,
-                      path,
-                      enable_functions_footprinting = F,
-                      trace_only = F,
-                      clean_on_start = F,
-                      skip_if,
-                      details = F,
-                      ...) {
-  str <- get_object_storr(path)
+resumable <- function(fun,
+                      root_path,
+                      env = environment(fun),
+                      eval_args_before_caching = TRUE,
+                      impactless_args = NULL) {
 
-  if (clean_on_start) {
-    str$destroy()
-    str <- get_object_storr(path)
-  }
-  .f <- purrr::as_mapper(.f, ...)
-  # check for no argument function
-  empty_arg_function <- F
-  fer<-function(){}
-  if(identical(args(fer), args(.f))){
-    empty_arg_function <- T
+  if(is_available("rlang")){
+    fun <- rlang::as_function(fun)
   }
 
-  if (enable_functions_footprinting) {
-    ff <- str$hash_object(.f)
-  } else{
-    ff <- str$storr_details$key_storr$default_namespace
+  if(!is.function(fun)){
+    stop("resumable is meant for a function.", call. = FALSE)
   }
 
-  if (!missing(skip_if)) {
-    skip_if <- purrr::as_mapper(skip_if)
-  } else{
-    skip_if <- function(...)
-      FALSE
+
+  if(is_resumable(fun)){
+    cat("Already resumable\n")
+    return(fun)
   }
 
-  .f_resume <- function(...) {
-    x <- list(...)
-    if(empty_arg_function) x <- "NULL"
+  fun_formals <- formals(fun)
 
-    if (str$exists(x, ff)) {
-      out <- str$get(x, ff)
-    } else{
+  # re-construct resumable function
+  fmod <- function(...){
+    actualcall <- match.call()
+    encl_env <- parent.env(environment())
 
-      if(empty_arg_function){
-        out <- .f()
-      }else{
-        out <- do.call(.f, x)
-      }
+    f_called_args <- as.list(actualcall)[-1]
 
-      if (!skip_if(out)) {
-        if (trace_only) {
-          str$set(x, 0, ff)
-        } else{
-          str$set(x, out, ff)
-        }
-      }
+    f_default_args <- encl_env$`_fun_default_args`
+
+    f_default_args <- f_default_args[
+      setdiff(names(f_default_args), names(f_called_args))
+    ]
+
+    f_called_args[
+      intersect(encl_env$`_fun_impactless_args`, names(f_called_args))
+    ] <- NULL
+    f_default_args[
+      intersect(encl_env$`_fun_impactless_args`, names(f_default_args))
+    ] <- NULL
+
+    if(encl_env$`_fun_eval_args`){
+      final_args <- c(lapply(f_called_args, eval, parent.frame()),
+                      lapply(f_default_args, eval, envir = environment()))
+
+    }else{
+      final_args <- c(f_called_args,
+                      f_default_args)
 
     }
-    out
-  }
-  #@Dev Here : To Do
-  # use attr and class for identification of resumable.
-  # create warning for function mismatch and exsisting directory
-  # use custom print method
 
-  .f_mod <- function(...) {
-    .f_resume(...)
-  }
 
-  if (details) {
-    .ls_key <- function() {
-      str$list(namespace = ff)
+    if(encl_env$`_fun_oc`$key_exists(final_args)){
+      out <- encl_env$`_fun_oc`$get(final_args)
+    }else{
+      actualcall[[1L]] <- encl_env$`_fun`
+      out <- withVisible(eval(actualcall, parent.frame()))
     }
-    list(
-      f = .f_mod,
-      st = str,
-      ns = ff,
-      ls_cached = function()
-        .ls_key()
-    )
-  } else{
-    .f_mod
+
+    if (out$visible) {
+      out$value
+    } else {
+      invisible(out$value)
+    }
   }
 
+  formals(fmod) <- fun_formals
+  attr(fmod, "resumable") <- TRUE
+
+  fh <- function_hash(fun)
+
+  if(missing(root_path)){
+    root_path <- tempfile(pattern = "resumable_")
+  }
+
+  path <- file.path(root_path, fh)
+
+  foc <- object_cache(path)
+
+  dir.create(path, showWarnings = FALSE, recursive = TRUE)
+
+  res_fun_env <- new.env(parent = env)
+  res_fun_env$`_fun_oc` <- foc
+  res_fun_env$`_fun_oc_path` <- path
+  res_fun_env$`_fun` <- fun
+  res_fun_env$`_fun_default_args` <- Filter(
+    function(x) !identical(x, quote(expr = )), fun_formals)
+  res_fun_env$`_fun_impactless_args` <- impactless_args
+  res_fun_env$`_fun_eval_args` <- eval_args_before_caching
+
+
+
+
+  environment(fmod) <- res_fun_env
+  class(fmod) <- c("resumable","function")
+
+  fmod
+
+}
+
+
+#' @export
+print.resumable <- function(x, ...) {
+  cat("Resumable Function:\n")
+  tryCatch(
+    {
+      print(environment(x)$`_fun`)
+    },
+    error = function(e){
+      stop("No function found / session terminated!", call. = FALSE)
+    })
+}
+
+
+is_resumable <- function(x){
+  inherits(x,"resumable") & isTRUE(attr(x, "resumable"))
 }

@@ -80,7 +80,9 @@ adapter_object_cache_from_object_memoise <- function(object_memoise){
 
 
 object_cache_alt_memoise <- function(path){
-  "memoise"
+  adapter_object_cache_from_object_memoise(
+    get_object_memoise(path)
+  )
 }
 
 object_cache_altMeta_memoise <- function(){

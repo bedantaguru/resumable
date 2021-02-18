@@ -89,7 +89,7 @@ adapter_object_cache_from_object_POS <- function(object_POS){
 
 
 object_cache_alt_POS <- function(path){
-  "POS"
+  adapter_object_cache_from_object_POS(get_object_POS(path))
 }
 
 object_cache_altMeta_POS <- function(){

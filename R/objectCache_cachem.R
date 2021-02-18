@@ -87,7 +87,9 @@ adapter_object_cache_from_object_cachem <- function(object_cachem){
 
 
 object_cache_alt_cachem <- function(path){
-  "cachem"
+  adapter_object_cache_from_object_cachem(
+    get_object_cachem(path)
+  )
 }
 
 object_cache_altMeta_cachem <- function(){

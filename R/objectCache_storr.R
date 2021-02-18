@@ -10,7 +10,8 @@ get_object_storr <- function(
   },
   value_storr =  function(path){
     storr::storr_rds(file.path(path, "values"))
-  })
+  },
+  sequentialize_set = FALSE)
 {
 
 
@@ -35,12 +36,21 @@ get_object_storr <- function(
     stv$exists(key_h, namespace) & stk$exists(key_h, namespace)
   }
 
+  stk_set <- stk$set
+  stv_set <- stv$set
+  if(sequentialize_set){
+    seq_path <- file.path(path, "seq")
+    stk_set <- sequentialize(stk_set, seq_path)
+    stv_set <- sequentialize(stv_set, seq_path)
+  }
+
   st$set <- function(key, value, namespace) {
     if (missing(namespace))
       namespace <- stv$default_namespace
     key_h <- stv$hash_object(key)
-    stk$set(key_h, key, namespace)
-    stv$set(key_h, value, namespace)
+
+    stk_set(key_h, key, namespace)
+    stv_set(key_h, value, namespace)
   }
 
   st$get <- function(key, namespace) {
@@ -114,7 +124,9 @@ adapter_object_cache_from_object_storr <- function(object_storr){
 
 
 object_cache_alt_storr <- function(path){
-  "storr"
+  adapter_object_cache_from_object_storr(
+    get_object_storr(path)
+  )
 }
 
 object_cache_altMeta_storr <- function(){
@@ -135,7 +147,17 @@ object_cache_altMeta_storr <- function(){
 
 
 object_cache_alt_thor <- function(path){
-"thor"
+  adapter_object_cache_from_object_storr(
+    get_object_storr(
+      path,
+      key_storr = function(path){
+        thor::storr_thor(thor::mdb_env(file.path(path, "keys")))
+      },
+      value_storr = function(path){
+        thor::storr_thor(thor::mdb_env(file.path(path, "values")))
+      }
+    )
+  )
 }
 
 object_cache_altMeta_thor <- function(){

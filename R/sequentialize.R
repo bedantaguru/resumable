@@ -3,7 +3,14 @@
 #' @export
 sequentialize <- function(fun, root_path, env = environment(fun)){
 
-  fun <- rlang::as_function(fun)
+  if(is_available("rlang")){
+    fun <- rlang::as_function(fun)
+  }
+
+  if(!is.function(fun)){
+    stop("sequentialize is meant for a function.", call. = FALSE)
+  }
+
 
   fun_formals <- formals(fun)
 

@@ -2,7 +2,7 @@
 
 
 
-# need to pur sequentialize here
+# need to put sequentialize here
 get_object_storr <- function(
   path = tempfile(pattern = "object_storr"),
   key_storr = function(path){
@@ -18,7 +18,7 @@ get_object_storr <- function(
   stv <- NULL
 
   create <- function(){
-    dir.create(path, showWarnings = FALSE)
+    dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
     stk <<- key_storr(path)
     stv <<- value_storr(path)
@@ -67,7 +67,7 @@ get_object_storr <- function(
   st$destroy <- function() {
     stk$destroy()
     stv$destroy()
-    unlink(path, recursive = T, force = T)
+    unlink(path, recursive = TRUE, force = TRUE)
   }
 
   st$reset <- function(){
@@ -95,3 +95,64 @@ get_object_storr <- function(
 #   }
 # )
 #
+
+adapter_object_cache_from_object_storr <- function(object_storr){
+
+  oc <- object_cache_empty()
+
+  oc$key_exists <- object_storr$exists
+  oc$set <- object_storr$set
+  oc$get <- object_storr$get
+  oc$list_keys <- object_storr$list
+  oc$remove <- object_storr$del
+  oc$destroy <- object_storr$destroy
+  oc$reset <- object_storr$reset
+
+  oc
+}
+
+
+
+object_cache_alt_storr <- function(path){
+  "storr"
+}
+
+object_cache_altMeta_storr <- function(){
+  list(
+
+    dep = list(
+      packages = c("storr")
+    ),
+
+    desc = paste0(
+      "Based on {storr} : 'Simple Key Value Stores'. ",
+      "Functions like storr::storr_* can be used"
+    )
+
+  )
+}
+
+
+
+object_cache_alt_thor <- function(path){
+"thor"
+}
+
+object_cache_altMeta_thor <- function(){
+  list(
+
+    dep = list(
+      packages = c("thor")
+    ),
+
+    type = c("suggested","recommended"),
+
+    desc = paste0(
+      "Based on {thor} : 'Simple Key Value Stores'. ",
+      "Functions like thor::storr_* can be used"
+    )
+
+  )
+}
+
+

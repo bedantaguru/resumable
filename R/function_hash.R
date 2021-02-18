@@ -34,7 +34,32 @@ to_char.function <- function(x){
   paste0(ar,"~fbdy~", bd)
 }
 
+
+# really it's not a a hash
+no_hash_actually <- function(x){
+  ns <- as.integer(serialize(x , connection = NULL))
+  ns[ns==0] <- 0.5
+  paste0("dummy_sum_",round(sum(ns*seq_along(ns))+sum(ns*seq_along(ns)^2)))
+}
+
+
+hash_it <- function(x){
+  if(is_available("digest")){
+    digest::digest(x)
+  }else{
+    if(is_available("rlang")){
+      rlang::hash(x)
+    }else{
+      warning(
+        paste0("Either {digest} or {rlang} required for hashing!\n",
+               "As none of them is available the hashing is not done correctly.\n",
+               "Please install either of them to disable this warning."),
+        call. = FALSE)
+      no_hash_actually(x)
+    }
+  }
+}
+
 function_hash <- function(fun){
-  # alternative rlang::hash
-  digest::digest(to_char(fun))
+  hash_it(to_char(fun))
 }

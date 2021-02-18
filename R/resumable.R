@@ -3,7 +3,7 @@
 #' @param .f a function or a formula similar to what is used in purrr package
 #' @param path a local path where and object_storr will be created for storing the function outcomes
 #' @param enable_functions_footprinting Logical value. If set to \code{TRUE} the resumable function will be liked to source code of the input function. Default value in \code{FALSE}.
-#' @param trace_only Logical value. If set to \code{TRUE} the resumable function does not store any output (just NULL or 0). It may be useful for situation where only extrenal activity is performed. Default value in \code{FALSE}.
+#' @param trace_only Logical value. If set to \code{TRUE} the resumable function does not store any output (just NULL or 0). It may be useful for situation where only external activity is performed. Default value in \code{FALSE}.
 #' @param clean_on_start Logical value. If set to \code{TRUE} then the cached values will be cleaned on start. Default value in \code{FALSE}.
 #' @param skip_if a function or a formula similar to what is used in purrr package which should return a locgical scaler. If this returns \code{TRUE} the value will not be stored. Ignore if not required.
 #' @param details Logical value indicating whether the object_storr and resumable function both are required or not. Default value in \code{FALSE}.

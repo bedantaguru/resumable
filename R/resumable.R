@@ -3,7 +3,8 @@ resumable <- function(fun,
                       root_path,
                       env = environment(fun),
                       eval_args_before_caching = TRUE,
-                      impactless_args = NULL) {
+                      impactless_args = NULL,
+                      clean_root_path_on_creation = FALSE) {
 
   if(is_available("rlang")){
     fun <- rlang::as_function(fun)
@@ -12,7 +13,6 @@ resumable <- function(fun,
   if(!is.function(fun)){
     stop("resumable is meant for a function.", call. = FALSE)
   }
-
 
   if(is_resumable(fun)){
     cat("Already resumable\n")
@@ -57,6 +57,7 @@ resumable <- function(fun,
     }else{
       actualcall[[1L]] <- encl_env$`_fun`
       out <- withVisible(eval(actualcall, parent.frame()))
+      encl_env$`_fun_oc`$set(final_args, out)
     }
 
     if (out$visible) {
@@ -73,6 +74,10 @@ resumable <- function(fun,
 
   if(missing(root_path)){
     root_path <- tempfile(pattern = "resumable_")
+  }
+
+  if(clean_root_path_on_creation){
+    unlink(root_path, recursive = TRUE)
   }
 
   path <- file.path(root_path, fh)
@@ -102,10 +107,15 @@ resumable <- function(fun,
 
 
 #' @export
-print.resumable <- function(x, ...) {
+print.resumable <- function(x, ..., details = FALSE) {
   cat("Resumable Function:\n")
   tryCatch(
     {
+      if(details){
+        oc <- environment(x)$`_fun_oc`
+        ks <- oc$list_keys()
+        cat(paste0("With ",length(ks)," cached arguments\n"))
+      }
       print(environment(x)$`_fun`)
     },
     error = function(e){

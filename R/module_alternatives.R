@@ -12,7 +12,38 @@
 # environment kept for storing "alternatives" for methods
 alternatives_env <- new.env()
 
-# end user function
+### end user function ###
+
+#' @title Alternatives framework
+#'
+#' @description For some functions (or functionalities) there can be multiple
+#'   number of R packages or even within a package multiple ways to do same or
+#'   similar things. Alternatives framework tries to unify the vareity
+#'   introduced by different approaches (may be referred as _alternatives_ for
+#'   that function) adopted by several authors / packages. It is like
+#'   `update-alternatives` command in linux (maybe you have used it to switch
+#'   between Java versions). But here it is more focused towards similar work
+#'   being done by various packages / functions. There are few related concepts
+#'   to it. Like adapters and converters. However, these all are now in
+#'   conceptual stage.
+#'
+#' @param method_name The function (either the direct function or name of the
+#'   function) which has multiple back-ends or implementation (which you want to
+#'   alter or install)
+#' @param implement This is the combination of `install` and `use`.
+#' @param use Use one of the _alternatives_ which is already installed (name of
+#'   the intended _alternative_)
+#' @param install Install dependency to an _alternative_ (mainly R-packages, but
+#'   potentially we can expand the API for other type of installation too). But
+#'   it will not use it.
+#' @param register Mainly kept for registration of new _alternative_ to the same
+#'   function.
+#' @param scope Scope where the changes of _alternatives_ will take place.
+#'
+#' @return  If *no argument expect* `method_name` is supplied then details about
+#'   _alternatives_ for the function will be returned. Otherwise it does not
+#'   return anything useful.
+#' @export
 alternatives <- function(method_name,
                          implement,
                          use,

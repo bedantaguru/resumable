@@ -168,7 +168,9 @@ object_cache_altMeta_thor <- function(){
       packages = c("thor")
     ),
 
-    type = c("suggested","recommended"),
+    # Note: It is yet to discover if this is a correct approach to use {thor}
+    # Now it does not work in parrallel sessions
+    type = c("Sequential"),
 
     desc = paste0(
       "Based on {thor} : 'Simple Key Value Stores'. ",

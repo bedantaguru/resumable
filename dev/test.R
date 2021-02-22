@@ -220,3 +220,23 @@ parallel::clusterApply(cl, 1:10, f1)
 
 readLines("test")
 
+
+#
+# == Testing test-resumable_parallel.R ===========================================
+#   [ FAIL 0 | WARN 0 | SKIP 0 | PASS 1 ][1] "POS"
+# elapsed
+# 0.92
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 5 ][1] "cachem"
+# elapsed
+# 1.18
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 9 ][1] "memoise"
+# elapsed
+# 0.55
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 13 ][1] "singletonFile"
+# elapsed
+# 1.06
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 17 ][1] "storr"
+# elapsed
+# 2.08
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 21 ] Done!
+#

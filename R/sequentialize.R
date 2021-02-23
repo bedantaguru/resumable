@@ -3,6 +3,10 @@
 #' @export
 sequentialize <- function(fun, root_path, env = environment(fun)){
 
+  if(!is_available("filelock")){
+    stop("This feature requires {filelock}", call. = FALSE)
+  }
+
   if(is_available("rlang")){
     fun <- rlang::as_function(fun)
   }
@@ -21,6 +25,11 @@ sequentialize <- function(fun, root_path, env = environment(fun)){
   fmod <- function(...){
     actualcall <- match.call()
     encl_env <- parent.env(environment())
+
+    if(!dir.exists(dirname(encl_env$`_fun_lockfile`))){
+      dir.create(dirname(encl_env$`_fun_lockfile`),
+                 showWarnings = FALSE, recursive = TRUE)
+    }
 
     fl <- filelock::lock(encl_env$`_fun_lockfile`)
 

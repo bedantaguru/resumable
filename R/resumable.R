@@ -4,10 +4,13 @@ resumable <- function(fun,
                       env = environment(fun),
                       eval_args_before_caching = TRUE,
                       impactless_args = NULL,
-                      clean_root_path_on_creation = FALSE) {
+                      clean_root_path_on_creation = FALSE,
+                      no_function_footprint = FALSE,
+                      skip_if = function(fval, fevaltime){FALSE}) {
 
   if(is_available("rlang")){
     fun <- rlang::as_function(fun)
+    skip_if <- rlang::as_function(skip_if)
   }
 
   if(!is.function(fun)){
@@ -56,8 +59,22 @@ resumable <- function(fun,
       out <- encl_env$`_fun_oc`$get(final_args)
     }else{
       actualcall[[1L]] <- encl_env$`_fun`
-      out <- withVisible(eval(actualcall, parent.frame()))
-      encl_env$`_fun_oc`$set(final_args, out)
+      etime <- system.time({
+        out <- withVisible(eval(actualcall, parent.frame()))
+      })
+
+      skip_if_chk <- tryCatch({
+        encl_env$`_fun_skip_if`(out$value, etime["elapsed"])
+      }, error = function(e) FALSE)
+
+      if(!is.logical(skip_if_chk)) skip_if_chk <- FALSE
+
+      if(length(skip_if_chk)!=1) skip_if_chk <- isTRUE(skip_if_chk[1])
+
+      if(!skip_if_chk){
+        encl_env$`_fun_oc`$set(final_args, out)
+      }
+
     }
 
     if (out$visible) {
@@ -70,7 +87,12 @@ resumable <- function(fun,
   formals(fmod) <- fun_formals
   attr(fmod, "resumable") <- TRUE
 
-  fh <- function_hash(fun)
+  if(no_function_footprint){
+    fh <- "rf"
+  }else{
+    fh <- function_hash(fun)
+  }
+
 
   if(missing(root_path)){
     root_path <- tempfile(pattern = "resumable_")
@@ -94,6 +116,7 @@ resumable <- function(fun,
     function(x) !identical(x, quote(expr = )), fun_formals)
   res_fun_env$`_fun_impactless_args` <- impactless_args
   res_fun_env$`_fun_eval_args` <- eval_args_before_caching
+  res_fun_env$`_fun_skip_if` <- skip_if
 
 
 

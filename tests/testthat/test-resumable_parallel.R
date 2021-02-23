@@ -16,6 +16,7 @@ test_that("parallel works", {
 
   for(bn in all_backends$name){
     if(bn!="thor"){
+
       alternatives(object_cache, use = bn)
 
       fr <- resumable(f1, root_path = ".test",
@@ -32,7 +33,23 @@ test_that("parallel works", {
       expect_true(grepl("calc", o1))
       expect_false(grepl("calc", o0))
 
+      # same should happen after recreate without clean_root_path_on_creation
+
+      frr <- resumable(f1, root_path = ".test")
+
+      o0 <- capture_output(expect_equal(sapply(1:10, frr), (1:10)^2))
+      o1 <- capture_output(fr(12))
+
+      expect_true(grepl("calc", o1))
+      expect_false(grepl("calc", o0))
+
     }
+
+    if(file.exists(".test")){
+      unlink(normalizePath(".test"), recursive = TRUE, force = TRUE)
+    }
+
+
   }
 
 

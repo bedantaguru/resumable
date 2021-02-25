@@ -1,7 +1,8 @@
 test_that("basic things works", {
 
   all_backends <- alternatives(object_cache)
-
+  all_backends <- all_backends[all_backends$is_usable,]
+  
   f0 <- function(x){
     print("calc")
     x^2

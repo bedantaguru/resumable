@@ -8,6 +8,7 @@ test_that("parallel works", {
   expect_equal(length(unique(c(unlist(pids), Sys.getpid()))), 3)
 
   all_backends <- alternatives(object_cache)
+  all_backends <- all_backends[all_backends$is_usable,]
 
   f1 <- function(x){
     print("calc")
@@ -52,5 +53,6 @@ test_that("parallel works", {
 
   }
 
+  parallel::stopCluster(cl)
 
 })

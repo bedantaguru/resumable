@@ -79,7 +79,7 @@ alternatives <- function(method_name,
   }
   alts <- get_alternatives(method_name)
 
-  alts <- alts[c("name","desc")]
+  alts <- alts[c("name","desc","is_usable")]
   aln <- get_configured_alternatives(method_name, details = TRUE)
   alts$in_use <- alts$name == aln$name
   alts

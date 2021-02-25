@@ -221,31 +221,6 @@ resumable <- function(fun,
   }
   
   
-  process_arg_proto <- function(encl_env, f_called_args ){
-    f_default_args <- encl_env$`_fun_default_args`
-    
-    f_default_args <- f_default_args[
-      setdiff(names(f_default_args), names(f_called_args))
-    ]
-    
-    f_called_args[
-      intersect(encl_env$`_fun_impactless_args`, names(f_called_args))
-    ] <- NULL
-    f_default_args[
-      intersect(encl_env$`_fun_impactless_args`, names(f_default_args))
-    ] <- NULL
-    
-    if(encl_env$`_fun_eval_args`){
-      final_args <- c(lapply(f_called_args, eval, parent.frame()),
-                      lapply(f_default_args, eval, envir = environment()))
-      
-    }else{
-      final_args <- c(f_called_args,
-                      f_default_args)
-      
-    }
-  }
-  
   res_fun_env <- new.env(parent = env)
   res_fun_env$`_fun_oc` <- foc
   res_fun_env$`_fun_oc_path` <- path

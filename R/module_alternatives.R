@@ -59,7 +59,7 @@ alternatives <- function(method_name,
       method_name <- method_name[3]
     }
   }
-
+  
   if(!missing(implement)){
     alternatives_implement(method_name, implement)
     return(invisible(0))
@@ -72,63 +72,116 @@ alternatives <- function(method_name,
     alternatives_install(method_name, install)
     return(invisible(0))
   }
-
+  
   if(!missing(register)){
     alternatives_register(method_name, register)
     return(invisible(0))
   }
   alts <- get_alternatives(method_name)
-
+  
   alts <- alts[c("name","desc","is_usable")]
   aln <- get_configured_alternatives(method_name, details = TRUE)
   alts$in_use <- alts$name == aln$name
   alts
 }
 
-alternatives_install <- function(method_name, alt_name) {
-    alts <- get_alternatives(method_name)
-    alts_target <- alts[alts$name == alt_name,]
-    to_inst <- c(
-      unlist(alts_target$meta.dep.packages),
-      unlist(alts_target$meta.dep.suggests)
-    )
-    #TODO
+alternatives_install <- function(method_name, alt_name, silent = FALSE) {
+  alts <- get_alternatives(method_name)
+  # special alt_names:
+  # "all" "best"
+  if("all" %in% tolower(alt_name)) alt_name <- alts$name
+  
+  if("best" %in% alt_name){
+    alt_name <- alts$name[alts$is_recommended]
   }
+  
+  in_type_chk <- unlist(
+    lapply(alts$meta.type, function(x) length(intersect(x, alt_name))>0)
+  )
+  
+  alts_target <- alts[(alts$name %in% alt_name)|in_type_chk,]
+  if(nrow(alts_target)==0){
+    stop("Probably invalid alternative name specification!", call. = FALSE)
+  }
+  to_inst <- c(
+    unlist(alts_target$meta.dep.packages),
+    unlist(alts_target$meta.dep.suggests)
+  )
+  is_inst_chk <- unlist(lapply(to_inst, is_available))
+  if(is.null(is_inst_chk)) is_inst_chk <- logical(0)
+  if(any(!is_inst_chk)){
+    to_inst <- to_inst[!is_inst_chk]
+    cm <- getOption("repos")
+    if(is.null(cm)){
+      cm <- "https://cloud.r-project.org/"
+    }
+    utils::install.packages(
+      pkgs = to_inst, 
+      repos = cm)
+  }else{
+    if(!silent){
+      cat("\nAll dependency already installed\n")
+    }
+  }
+}
 
 alternatives_use <- function(method_name, alt_name) {
-
+  
+  if(length(alt_name)!=1){
+    stop("Only one alternative can be used", call. = FALSE)
+  }
+  
   alts_valid <- get_alternatives(method_name, only_uable = TRUE)
-
+  # specific case
+  if(alt_name == "best"){
+    alt_name <- alts_valid$name[alts_valid$is_recommended]
+  }
+  
+  if(!(alt_name %in% alts_valid$name)){
+    # search in type
+    in_type_chk <- unlist(
+      lapply(alts_valid$meta.type, function(x) length(intersect(x, alt_name))>0)
+    )
+    
+    if(any(in_type_chk)){
+      alt_name <- alts_valid$name[in_type_chk]
+      alt_name <- alt_name[1]
+    }
+    
+  }
+  
+  
   if(!(alt_name %in% alts_valid$name)){
     stop(paste0("There is no alternatives for method ",method_name,
                 " with the name ", alt_name,
                 " (which is either installed/configured or registered)."),
          call. = FALSE)
   }
-
+  
   if (exists("persistent_object_store",
              envir = parent.env(environment()))) {
     # in this case custom method will be implemented in all subsequent sessions
     # unless changed again
-
+    
     pos_alt <- persistent_object_store(appname = "alternatives")
     pos_alt$write(method_name, alt_name)
-
+    
   }
-
+  
   # by default store in session environment only
   assign(paste0(method_name,"_alternatives_in_use"), alt_name,
          envir = alternatives_env)
-
+  
 }
 
 alternatives_implement <- function(method_name, alt_name) {
-  alternatives_install(method_name, alt_name)
+  alternatives_install(method_name, alt_name, silent = TRUE)
   alternatives_use(method_name, alt_name)
 }
 
 alternatives_register <- function(method_name, alternative_details){
   #TODO for 3rd party integration
+  stop("Not implemented  yet", call. = FALSE)
 }
 
 use_alternatives <- function(method_name) {
@@ -147,14 +200,14 @@ search_alternatives <- function(method_name, env) {
   if (missing(env)) {
     env <- parent.env(environment())
   }
-
+  
   alt_name_style <- alternatives_dispatch_style_naming(method_name)
-
+  
   alts <- lapply(alt_name_style,
                  function(an) {
                    ls(pattern = an, envir = env)
                  })
-
+  
   alts2 <- lapply(names(alts),
                   function(ann) {
                     d <- data.frame(temp = alts[[ann]])
@@ -162,11 +215,11 @@ search_alternatives <- function(method_name, env) {
                     d$name <- gsub(alt_name_style[[ann]], "", alts[[ann]])
                     d
                   })
-
+  
   altd <-
     Reduce(function(x, y)
       merge(x, y, by = "name", all = TRUE), alts2)
-
+  
   for (ann in names(alt_name_style)) {
     altd[[paste0(ann, "_fn")]] <- lapply(altd[[ann]],
                                          function(annn) {
@@ -175,14 +228,14 @@ search_alternatives <- function(method_name, env) {
                                            } else{
                                              # blank function
                                              function(...) {
-
+                                               
                                              }
                                            }
                                          })
   }
-
+  
   altd
-
+  
 }
 
 # this is the guy who parse alt data
@@ -200,7 +253,7 @@ elaborate_alternatives_data <- function(alts) {
   alts$meta.desc <- lapply(alts$alt_meta_lst, `[[`, "desc")
   alts$desc <-
     unlist(lapply(alts$meta.desc, paste0, collapse = ", "))
-
+  
   alts$is_base <- unlist(lapply(alts$meta.type,
                                 function(x) "base" %in% x))
   if(!any(alts$is_base)){
@@ -211,13 +264,13 @@ elaborate_alternatives_data <- function(alts) {
     pkfinaldep <- pkdep+0.5*pksugdep
     alts$is_base[pkfinaldep==min(pkfinaldep)] <- TRUE
   }
-
+  
   alts$is_recommended <- unlist(lapply(alts$meta.type,
                                        function(x) "recommended" %in% x))
   if(!any(alts$is_recommended)){
     alts$is_recommended <- alts$is_base
   }
-
+  
   alts
 }
 
@@ -225,26 +278,26 @@ elaborate_alternatives_data <- function(alts) {
 register_alternatives_self <- function(method_name) {
   if (!isTRUE(alternatives_env[[paste0(method_name, "_self_searched")]])) {
     alts <- search_alternatives(method_name)
-
+    
     alts <- elaborate_alternatives_data(alts)
-
+    
     alts$provider <- "self"
-
+    
     assign(paste0(method_name, "_self_searched"),
            TRUE,
            envir = alternatives_env)
-
+    
     assign(paste0(method_name, "_alts"),
            alts,
            envir = alternatives_env)
-
+    
   } else{
     alts <- get(paste0(method_name, "_alts"), envir = alternatives_env)
-
+    
   }
-
+  
   alts
-
+  
 }
 
 # for registration on the fly by third party
@@ -256,12 +309,12 @@ register_alternatives <- function(method_name) {
 }
 
 check_alternatives_data <- function(alts){
-
+  
   alts$meta.dep.packages_is_installed <-
     unlist(lapply(alts$meta.dep.packages, is_available))
   # TODO many tuning can be done here
   alts$is_usable <- alts$meta.dep.packages_is_installed
-
+  
   alts$select_score <- ifelse(alts$is_usable, 1, 0)*(
     alts$is_recommended*5+alts$is_base*2+1
   )
@@ -270,7 +323,7 @@ check_alternatives_data <- function(alts){
 
 auto_select_alternatives <- function(method_name){
   alts_valid <- get_alternatives(method_name, only_uable = TRUE)
-
+  
   alt_name_by_score <-
     alts_valid$name[order(alts_valid$select_score, decreasing = TRUE)][1]
   # store it for faster access
@@ -282,7 +335,7 @@ auto_select_alternatives <- function(method_name){
 get_alternatives <- function(method_name, only_uable = FALSE) {
   alts <- register_alternatives(method_name)
   alts <- check_alternatives_data(alts)
-
+  
   if(only_uable){
     alts <- alts[alts$select_score>0,]
     if(nrow(alts)==0){
@@ -291,70 +344,70 @@ get_alternatives <- function(method_name, only_uable = FALSE) {
            call. = FALSE)
     }
   }
-
+  
   alts
 }
 
 get_configured_alternatives <- function(method_name, details = FALSE) {
-
+  
   alts_valid <- get_alternatives(method_name, only_uable = TRUE)
-
+  
   found_alt <- FALSE
   alt_name <- ""
-
+  
   priority <- c("file_system", "session")
   # priority can be altered easily by priority <- c("session", "file_system")
   # TODO maybe that can be kept as a configuration to the alternatives itself.
-
-
+  
+  
   while(length(priority)>0){
-
+    
     if(!found_alt & priority[1] == "session"){
       if(exists(
         paste0(method_name,"_alternatives_in_use"),
         envir = alternatives_env
       )){
-
+        
         alt_name_try <- get(paste0(method_name,"_alternatives_in_use"),
                             envir = alternatives_env)
-
+        
         if(alt_name_try %in% alts_valid$name){
           found_alt <- TRUE
           alt_name <- alt_name_try
         }
-
+        
       }
     }
-
+    
     if(!found_alt & priority[1] == "file_system"){
       if (exists("persistent_object_store",
                  envir = parent.env(environment()))) {
         # in this case custom method will be implemented in all subsequent sessions
         # unless changed again
-
+        
         pos_alt <- persistent_object_store(appname = "alternatives")
         alt_name_try <- pos_alt$read(method_name)
-
+        
         if(is.null(alt_name_try)) alt_name_try <- ""
-
+        
         if(alt_name_try %in% alts_valid$name){
           found_alt <- TRUE
           alt_name <- alt_name_try
-
+          
           # store it for faster access
           assign(paste0(method_name,"_alternatives_in_use"), alt_name,
                  envir = alternatives_env)
         }
-
+        
       }
     }
-
+    
     priority <- priority[-1]
-
+    
   }
-
-
-
+  
+  
+  
   if(!found_alt){
     alt_name_try <- auto_select_alternatives(method_name)
     if(alt_name_try %in% alts_valid$name){
@@ -362,16 +415,16 @@ get_configured_alternatives <- function(method_name, details = FALSE) {
       alt_name <- alt_name_try
     }
   }
-
+  
   if(found_alt){
     if(details){
       alts_valid[alts_valid$name==alt_name,]
     }else{
       alts_valid[alts_valid$name==alt_name,]$alt_name_fn[[1]]
     }
-
+    
   }else{
     stop("No alternatives found.", call. = FALSE)
   }
-
+  
 }

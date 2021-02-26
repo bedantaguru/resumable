@@ -16,7 +16,9 @@ get_object_cachem <- function(
   camv <- NULL
 
   create <- function(){
-    dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    if(!is.null(path)){
+      dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    }
 
     camk <<- key_cachem_cache(path)
     camv <<- value_cachem_cache(path)
@@ -54,7 +56,9 @@ get_object_cachem <- function(
   cam$destroy <- function(){
     camk$destroy()
     camv$destroy()
-    unlink(path, recursive = TRUE, force = TRUE)
+    if(!is.null(path)){
+      unlink(path, recursive = TRUE, force = TRUE)
+    }
   }
 
   cam$reset <- function(){

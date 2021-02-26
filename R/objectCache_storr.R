@@ -19,7 +19,9 @@ get_object_storr <- function(
   stv <- NULL
 
   create <- function(){
-    dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    if(!is.null(path)){
+      dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    }
 
     stk <<- key_storr(path)
     stv <<- value_storr(path)
@@ -38,7 +40,7 @@ get_object_storr <- function(
 
   stk_set <- stk$set
   stv_set <- stv$set
-  if(sequentialize_set){
+  if(sequentialize_set & !is.null(path)){
     seq_path <- file.path(path, "seq")
     stk_set <- sequentialize(stk_set, seq_path)
     stv_set <- sequentialize(stv_set, seq_path)
@@ -77,7 +79,9 @@ get_object_storr <- function(
   st$destroy <- function() {
     stk$destroy()
     stv$destroy()
-    unlink(path, recursive = TRUE, force = TRUE)
+    if(!is.null(path)){
+      unlink(path, recursive = TRUE, force = TRUE)
+    }
   }
 
   st$reset <- function(){

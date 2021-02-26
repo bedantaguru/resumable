@@ -17,6 +17,9 @@ object_cache_empty <- function(){
     list_keys = function(){
       invisible(NULL)
     },
+    list_values = function(){
+      invisible(NULL)
+    },
     remove = function(key){
       invisible(NULL)
     },

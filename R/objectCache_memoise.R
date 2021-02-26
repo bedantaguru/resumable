@@ -17,7 +17,10 @@ get_object_memoise <- function(
   memv <- NULL
 
   create <- function(){
-    dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    if(!is.null(path)){
+      dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    }
+
 
     memk <<- key_memoise_cache(path)
     memv <<- value_memoise_cache(path)
@@ -49,7 +52,9 @@ get_object_memoise <- function(
   # mem$remove method not present
 
   mem$destroy <- function(){
-    unlink(path, recursive = TRUE, force = TRUE)
+    if(!is.null(path)){
+      unlink(path, recursive = TRUE, force = TRUE)
+    }
   }
 
   mem$reset <- function(){

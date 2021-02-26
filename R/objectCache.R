@@ -26,6 +26,9 @@ object_cache_empty <- function(){
     reset = function(){
       invisible(NULL)
     }
+    relocate = function(move_to){
+      invisible(NULL)
+    }
   )
 }
 
@@ -38,6 +41,10 @@ object_cache <- function(path = tempfile("object_cache"), use, ...){
 
 
 
-object_cache_copy <- function(oc_src, oc_dest){
-  
+object_cache_copy <- function(oc_src, oc_dest, iterator = lapply){
+  ks <- oc_src$list_keys()
+  iterator(ks, function(x){
+    oc_dest$set(x, oc_src$get(x))
+  })
+  invisible(0)
 }

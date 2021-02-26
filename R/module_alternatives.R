@@ -184,9 +184,55 @@ alternatives_register <- function(method_name, alternative_details){
   stop("Not implemented  yet", call. = FALSE)
 }
 
-use_alternatives <- function(method_name) {
-  calt <- get_configured_alternatives(method_name)
-  do.call(calt, args = as.list(sys.frame(sys.parent())))
+use_alternatives <- function(method_name, use_alt_arg_name = "use") {
+  c_args <- as.list(sys.frame(sys.parent()))
+  use_configured <- TRUE
+  
+  
+  if(use_alt_arg_name %in% names(c_args)){
+    
+    on_the_fly_failed <- FALSE
+    
+    # on the fly choose mode
+    use_on_the_fly <- c_args[[use_alt_arg_name]]
+    c_args[[use_alt_arg_name]] <- NULL
+    if(length(use_on_the_fly)==1 & is.character(use_on_the_fly)){
+      
+      alts <- get_alternatives(method_name)
+      
+      sel1 <- alts$name==use_on_the_fly
+      if(!any(sel1)){
+        in_type_chk <- unlist(
+          lapply(alts$meta.type, 
+                 function(x) length(intersect(x, use_on_the_fly))>0)
+        )
+        sel1 <- in_type_chk
+      }
+      
+      if(any(sel1)){
+        alts_sel <- alts[sel1,]
+        calt <- alts_sel$alt_name_fn[[1]]
+        use_configured <- FALSE
+      }else{
+        on_the_fly_failed <- TRUE
+      }
+      
+    }else{
+      on_the_fly_failed <- TRUE
+    }
+    
+    if(on_the_fly_failed){
+      warning(paste0("Unable to use: ", 
+                     use_on_the_fly,
+                     "\nFalling back to configured alternative."), 
+              call. = FALSE)
+    }
+    
+  }
+  if(use_configured){
+    calt <- get_configured_alternatives(method_name)
+  }
+  do.call(calt, args = c_args)
 }
 
 alternatives_dispatch_style_naming <- function(method_name) {

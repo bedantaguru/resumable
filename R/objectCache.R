@@ -32,6 +32,12 @@ object_cache_empty <- function(){
 
 
 #' @export
-object_cache <- function(path = tempfile("object_cache"), ...){
+object_cache <- function(path = tempfile("object_cache"), use, ...){
   use_alternatives("object_cache")
+}
+
+
+
+object_cache_copy <- function(oc_src, oc_dest){
+  
 }

@@ -25,7 +25,7 @@ object_cache_empty <- function(){
     },
     reset = function(){
       invisible(NULL)
-    }
+    },
     relocate = function(move_to){
       invisible(NULL)
     }

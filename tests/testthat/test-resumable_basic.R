@@ -2,7 +2,7 @@ test_that("basic things works", {
 
   all_backends <- alternatives(object_cache)
   all_backends <- all_backends[all_backends$is_usable,]
-  
+
   f0 <- function(x){
     print("calc")
     x^2
@@ -46,7 +46,7 @@ test_that("basic things works", {
     # if root path is deleted it should be able to recreate it
     # assuming all cached values are lost (this is only for two inbuilt)
 
-    if(bn %in% c("POS","singletonFile")){
+    if(bn %in% c("POS","SF")){
       tf <- tempfile()
 
       fr1.2 <- resumable(f0,

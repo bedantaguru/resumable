@@ -5,7 +5,7 @@
 #>> Depends on (shallow): {PersistentObjectStore}
 #>> Note: Prototype
 #>> Author: Indranil Gayen
-#>> Version: 0.0.2
+#>> Version: 0.0.3
 #>> Files: c("R/module_alternatives.R")
 
 
@@ -207,13 +207,23 @@ get_alternative_through_direct_call <- function(
   method_name,
   called_arg,
   use_alt_arg_name){
+
   use_configured <- TRUE
+  calt <- NULL
+
+  on_the_fly_attempted <- FALSE
+
+  if(use_alt_arg_name %in% names(called_arg)){
+    use_on_the_fly <- called_arg[[use_alt_arg_name]]
+    if(!missing(use_on_the_fly)){
+      on_the_fly_attempted <- TRUE
+    }
+  }
 
   # use alt on the fly
-  if(use_alt_arg_name %in% names(called_arg)){
+  if(on_the_fly_attempted){
 
     on_the_fly_failed <- FALSE
-    calt <- NULL
 
 
     # on the fly choose mode

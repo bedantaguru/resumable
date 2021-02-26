@@ -1,7 +1,7 @@
 
 
 
-f0 <- function(x=4, 
+f0 <- function(x=4,
                y=4){
   if(T){
     T
@@ -30,13 +30,13 @@ f2 <- memoise::memoise(f0, cache = memoise::cache_filesystem(tempfile()))
 
 parallel::clusterApply(cl, 1:2, f1)
 
-# user  system elapsed 
-# 0.02    0.00    0.09 
+# user  system elapsed
+# 0.02    0.00    0.09
 
 parallel::clusterApply(cl, 1:2, f2)
 
-# user  system elapsed 
-# 0.00    0.00    0.03 
+# user  system elapsed
+# 0.00    0.00    0.03
 
 parallel::clusterApply(cl, 1:2, function(x) sessionInfo())
 
@@ -169,7 +169,7 @@ thor::storr_thor()
 
 long_function_n <- function(n){
   flong <- eval(
-    parse(text = 
+    parse(text =
             paste0("function(x){\n",
                    paste0("x", 1:n, " <- ", 1:n, collapse = "\n"),"\nx\n}")))
   flong
@@ -190,11 +190,13 @@ resumable:::alternatives(resumable::object_cache, use = "memoise")
 resumable:::alternatives(resumable::object_cache, use = "POS")
 resumable:::alternatives(resumable::object_cache, use = "storr")
 resumable:::alternatives(resumable::object_cache, use = "thor")
-resumable:::alternatives(resumable::object_cache, use = "singletonFile")
+#resumable:::alternatives(resumable::object_cache, use = "singletonFile")
+# singletonFile renamed to SF
+resumable:::alternatives(resumable::object_cache, use = "SF")
 
 
 parallel::clusterApply(cl, 1:3, function(x){
-  
+
   resumable:::alternatives(resumable::object_cache)
 })
 
@@ -230,13 +232,13 @@ parallel::clusterApply(cl, 1:100, f1)
 parallel::clusterApply(cl, 1:100, function(x, f){try(f(x))}, f=f1)
 
 parallel::clusterApply(cl, 1:100, function(x){
-  
+
   f0 <- function(x){
     x
   }
-  
-  
-  
+
+
+
   tryCatch({
     f1 <- resumable::resumable(f0, root_path = ".test")
     f1(x)

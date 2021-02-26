@@ -85,7 +85,7 @@ persistent_object_store <- function(
                            get_file_path_only = FALSE){
 
     if(!missing(lst) & !R_object){
-      # string mode (key and values are singleton strings supplied in a list)
+      # string mode (key and values are single strings supplied in a list)
       what <- names(lst)
       value <- unlist(lst)
     }
@@ -131,7 +131,7 @@ persistent_object_store <- function(
   }
 
 
-  # read method Note: if what is singleton then result will be singleton in all
+  # read method Note: if what is single then result will be single in all
   # other cases it will be list
   handle$read <- function(
     what,

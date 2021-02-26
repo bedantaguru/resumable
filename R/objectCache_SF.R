@@ -1,9 +1,9 @@
 
 
-# specific singleton file based object cache
+# specific SF:singleton file based object cache
 
-get_object_singleton_file_based <- function(
-  path = tempfile(pattern = "object_singleton_file")
+get_object_SF <- function(
+  path = tempfile(pattern = "object_SF")
 ){
 
   sf <- list()
@@ -84,11 +84,11 @@ get_object_singleton_file_based <- function(
 
 
 
-object_cache_alt_singletonFile <- function(path){
-  get_object_singleton_file_based(path)
+object_cache_alt_SF <- function(path){
+  get_object_SF(path)
 }
 
-object_cache_altMeta_singletonFile <- function(){
+object_cache_altMeta_SF <- function(){
   list(
 
     dep = list(

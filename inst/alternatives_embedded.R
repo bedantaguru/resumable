@@ -3,7 +3,7 @@
 # this is for alternatives auto-complete using {patch} (NON-CRAN)
 
 if(dir.exists(system.file(package = "patch"))){
-  
+
   if(exists(".rs.addFunction")){
     enable_all <- function() {
       auto_complete_alternatives <- function() {
@@ -13,32 +13,32 @@ if(dir.exists(system.file(package = "patch"))){
                          ".rs.getCompletionsEnvironmentVariables",
                          # addition portion
                          if (length(string) &&
-                             # package(s) which ships alternatives  
+                             # package(s) which ships alternatives
                              ("resumable" %in% .packages()) &&
                              string[[1]] == "alternatives" &&
                              numCommas[[1]] == 0) {
-                           
+
                            # package(s) which ships alternatives
                            nsr <- asNamespace("resumable")
                            nsexp <- getNamespaceExports(nsr)
                            fns <- unlist(
-                             lapply(nsexp, 
+                             lapply(nsexp,
                                     function(x) is.function(nsr[[x]])))
                            sels <- nsexp[fns]
                            sels <- setdiff(sels, "alternatives")
-                           
+
                            using_alt <- unlist(
-                             lapply(sels, 
-                                  function(fxn){
-                                    any(grepl("use_alternatives",
-                                              as.character(body(nsr[[fxn]]))))
-                                  }))
-                           
+                             lapply(sels,
+                                    function(fxn){
+                                      any(grepl("use_alternatives",
+                                                as.character(body(nsr[[fxn]]))))
+                                    }))
+
                            sels <- sels[using_alt]
-                           
+
                            candidates <- sels
                            results <- .rs.selectFuzzyMatches(candidates, token)
-                           
+
                            return(.rs.makeCompletions(
                              token = token,
                              results = results,
@@ -46,35 +46,36 @@ if(dir.exists(system.file(package = "patch"))){
                              type = .rs.acCompletionTypes$VECTOR
                            ))
                          },
-                         chop_locator_to = 1
+                         chop_locator_to = 1,
+                         safely = TRUE
           )
         )
       }
-      
+
       auto_complete_alternatives_args <- function() {
         .rs.addFunction(
           "getCompletionsArgument",
           patch::patch_function(.rs.getCompletionsArgument,
                          '"knitr"',
                          if(as.character(functionCall)[1]=="alternatives"){
-                           
+
                            altfn <- .rs.getAnywhere("alternatives", envir)
-                           
+
                            altcallon <- as.character(functionCall[2])
-                           
+
                            alts <- tryCatch(
                              altfn(altcallon),
                              error = function(e) NULL
                            )
-                           
+
                            if(is.data.frame(alts)){
                              if(nrow(alts)>0){
-                               
-                               if (activeArg == "implement" | 
+
+                               if (activeArg == "implement" |
                                    activeArg == "install" |
                                    activeArg == "use") {
                                  if(activeArg == "implement"){
-                                   choices <- c("best", alts$name) 
+                                   choices <- c("best", alts$name)
                                  }else{
                                    if(activeArg == "use"){
                                      choices <- c("best", alts$name[alts$is_usable])
@@ -83,9 +84,9 @@ if(dir.exists(system.file(package = "patch"))){
                                      choices <- c("all", "best", alts$name[!alts$is_usable])
                                    }
                                  }
-                                 
+
                                  results <- .rs.selectFuzzyMatches(choices, token)
-                                 
+
                                  return(.rs.makeCompletions(
                                    token = token,
                                    results = results,
@@ -93,16 +94,17 @@ if(dir.exists(system.file(package = "patch"))){
                                    type = .rs.acCompletionTypes$STRING
                                  ))
                                }
-                               
+
                              }
                            }
-                           
+
                          },
-                         chop_locator_to = 1
+                         chop_locator_to = 1,
+                         safely = TRUE
           )
         )
       }
-      
+
       # not called yet
       auto_complete_reset <- function() {
         # reset
@@ -110,27 +112,29 @@ if(dir.exists(system.file(package = "patch"))){
           "get_completions",
           patch::patch_function(.rs.rpc.get_completions)
         )
-        
+
         .rs.addFunction(
           "getCompletionsArgument",
           patch::patch_function(.rs.getCompletionsArgument)
         )
       }
-      
-      
+
+
       # implement
+      options(store_function_before_patch = TRUE)
       auto_complete_alternatives()
       auto_complete_alternatives_args()
+      options(store_function_before_patch = NULL)
     }
     enable_all()
     rm(enable_all)
   }else{
     cat("\nThese are designed for R-Studio\n")
   }
-  
+
 }else{
   cat(
-    "This is for alternatives auto-complete using {patch} (NON-CRAN)", 
+    "This is for alternatives auto-complete using {patch} (NON-CRAN)",
     "This requires {patch} which can be installed as described in:",
     "https://github.com/r-rudra/patch",
     "Also this is meant for RStudio but may cause issues with it.",

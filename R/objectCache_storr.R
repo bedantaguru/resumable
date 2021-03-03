@@ -14,7 +14,6 @@ get_object_storr <- function(
   sequentialize_set = FALSE)
 {
 
-
   stk <- NULL
   stv <- NULL
 
@@ -68,6 +67,31 @@ get_object_storr <- function(
     stk$mget(stv$list(namespace), namespace)
   }
 
+  st$list_values <- function(namespace){
+    if (missing(namespace))
+      namespace <- stv$default_namespace
+    stv$mget(stv$list(namespace), namespace)
+  }
+
+  st$relocate <- function(move_to){
+    dir.create(move_to, showWarnings = FALSE, recursive = TRUE)
+    fls <- list.files(path,
+                      all.files = TRUE)
+    fls <- setdiff(fls, c(".",".."))
+    ffrom <- file.path(path, fls)
+    fto <- file.path(move_to, fls)
+
+    file.rename(from = ffrom, to = fto)
+
+    old_path <- path
+    stk$destroy()
+    stv$destroy()
+    path <<- move_to
+    create()
+    unlink(old_path, recursive = TRUE, force = TRUE)
+    invisible(0)
+  }
+
   st$del <- function(key, namespace) {
     if (missing(namespace))
       namespace <- stv$default_namespace
@@ -118,9 +142,11 @@ adapter_object_cache_from_object_storr <- function(object_storr){
   oc$set <- object_storr$set
   oc$get <- object_storr$get
   oc$list_keys <- object_storr$list
+  oc$list_values <- object_storr$list_values
   oc$remove <- object_storr$del
   oc$destroy <- object_storr$destroy
   oc$reset <- object_storr$reset
+  oc$relocate <- object_storr$relocate
 
   oc
 }

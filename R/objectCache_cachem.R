@@ -47,6 +47,29 @@ get_object_cachem <- function(
     lapply(camv$keys(), camk$get)
   }
 
+  cam$list_values <- function(){
+    lapply(camv$keys(), camv$get)
+  }
+
+  cam$relocate <- function(move_to){
+    dir.create(move_to, showWarnings = FALSE, recursive = TRUE)
+    fls <- list.files(path,
+                      all.files = TRUE)
+    fls <- setdiff(fls, c(".",".."))
+    ffrom <- file.path(path, fls)
+    fto <- file.path(move_to, fls)
+
+    file.rename(from = ffrom, to = fto)
+
+    old_path <- path
+    camk$destroy()
+    camv$destroy()
+    path <<- move_to
+    create()
+    unlink(old_path, recursive = TRUE, force = TRUE)
+    invisible(0)
+  }
+
   cam$remove <- function(key){
     key_h <- hash_it(key)
     camk$remove(key_h)
@@ -80,9 +103,12 @@ adapter_object_cache_from_object_cachem <- function(object_cachem){
   oc$set <- object_cachem$set
   oc$get <- object_cachem$get
   oc$list_keys <- object_cachem$keys
+  oc$list_values <- object_cachem$list_values
   oc$remove <- object_cachem$remove
   oc$destroy <- object_cachem$destroy
   oc$reset <- object_cachem$reset
+  oc$relocate <- object_cachem$relocate
+
 
   oc
 

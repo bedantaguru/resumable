@@ -48,6 +48,31 @@ get_object_POS <- function(
       R_object = TRUE, uniform_output = TRUE)
   }
 
+  pos$list_values <- function(){
+    posv$read(
+      posv$list_keys(R_object = TRUE),
+      R_object = TRUE, uniform_output = TRUE)
+  }
+
+  pos$relocate <- function(move_to){
+    dir.create(move_to, showWarnings = FALSE, recursive = TRUE)
+    fls <- list.files(path,
+                      all.files = TRUE)
+    fls <- setdiff(fls, c(".",".."))
+    ffrom <- file.path(path, fls)
+    fto <- file.path(move_to, fls)
+
+    file.rename(from = ffrom, to = fto)
+
+    old_path <- path
+    posk$destroy()
+    posv$destroy()
+    path <<- move_to
+    create()
+    unlink(old_path, recursive = TRUE, force = TRUE)
+    invisible(0)
+  }
+
   pos$remove <- function(key){
     key_h <- hash_it(key)
     posk$remove(key_h, R_object = TRUE)
@@ -80,9 +105,11 @@ adapter_object_cache_from_object_POS <- function(object_POS){
   oc$set <- object_POS$write
   oc$get <- object_POS$read
   oc$list_keys <- object_POS$list_keys
+  oc$list_values <- object_POS$list_values
   oc$remove <- object_POS$remove
   oc$destroy <- object_POS$destroy
   oc$reset <- object_POS$reset
+  oc$relocate <- object_POS$relocate
 
   oc
 }

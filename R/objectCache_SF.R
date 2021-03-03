@@ -8,16 +8,9 @@ get_object_SF <- function(
 
   sf <- list()
 
-  kf <- file.path(path, "keys")
-  vf <- file.path(path, "values")
+  kf <- NULL
+  vf <- NULL
 
-  create <- function(){
-    if(!dir.exists(path)) {
-      dir.create(path, showWarnings = FALSE, recursive = TRUE)
-    }
-    if(!file.exists(kf)) save_rds(list(), kf)
-    if(!file.exists(vf)) save_rds(list(), vf)
-  }
 
   read_rds <- function(file){
     if(!file.exists(file)) return(list())
@@ -32,6 +25,17 @@ get_object_SF <- function(
     saveRDS(val, file)
   }
 
+  create <- function(){
+    if(!dir.exists(path)) {
+      dir.create(path, showWarnings = FALSE, recursive = TRUE)
+    }
+    kf <<- file.path(path, "keys")
+    vf <<- file.path(path, "values")
+    if(!file.exists(kf)) save_rds(list(), kf)
+    if(!file.exists(vf)) save_rds(list(), vf)
+  }
+
+  create()
 
   sf$key_exists <- function(key){
     key_h <- hash_it(key)
@@ -57,6 +61,25 @@ get_object_SF <- function(
     lk <- read_rds(kf)
     lv <- read_rds(vf)
     lk[names(lv)]
+  }
+  sf$list_values <- function(){
+    read_rds(vf)
+  }
+  sf$relocate <- function(move_to){
+    dir.create(move_to, showWarnings = FALSE, recursive = TRUE)
+    fls <- list.files(path,
+                      all.files = TRUE)
+    fls <- setdiff(fls, c(".",".."))
+    ffrom <- file.path(path, fls)
+    fto <- file.path(move_to, fls)
+
+    file.rename(from = ffrom, to = fto)
+
+    old_path <- path
+    path <<- move_to
+    create()
+    unlink(old_path, recursive = TRUE, force = TRUE)
+    invisible(0)
   }
   sf_remove <- function(key){
     key_h <- hash_it(key)

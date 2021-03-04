@@ -51,3 +51,35 @@ object_cache_copy <- function(oc_src, oc_dest, iterator = lapply){
   })
   invisible(0)
 }
+
+is_object_cache <- function(x){
+  oce <- object_cache_empty()
+  nt <- names(oce)
+  res <- tryCatch(
+    {
+      nx <- names(x)
+      chk <- length(setdiff(nt, nx))==0
+      if(chk){
+        cmn <- intersect(nx, nt)
+        for(nn in cmn){
+          if(is.function(x[[nn]])){
+            if(length(setdiff(
+              names(formals(oce[[nn]])),
+              names(formals(x[[nn]]))
+            ))>0){
+              chk <- FALSE
+              break()
+            }
+          }else{
+            chk <- FALSE
+            break()
+          }
+        }
+
+      }
+      chk
+    },
+    error = function(e) FALSE
+  )
+  res
+}

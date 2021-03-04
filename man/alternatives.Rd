@@ -33,7 +33,7 @@ If *no argument expect* `method_name` is supplied then details about
 \description{
 For some functions (or functionalities) there can be multiple
   number of R packages or even within a package multiple ways to do same or
-  similar things. Alternatives framework tries to unify the vareity
+  similar things. Alternatives framework tries to unify the variety
   introduced by different approaches (may be referred as _alternatives_ for
   that function) adopted by several authors / packages. It is like
   `update-alternatives` command in linux (maybe you have used it to switch

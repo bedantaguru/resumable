@@ -1,4 +1,30 @@
 
+unlink("test", recursive = T, force = T)
+unlink("test2", recursive = T, force = T)
+
+f <- resumable(function(x){
+  print("calc")
+  x
+},"test")
+
+f(1)
+f(2)
+
+g <- ro_convert(f, new_oc = "SF")
+
+g <- ro_transfer(f, new_root = "test2")
+
+# dest_oc and new root both is required
+# new_root has to be given always (otherwise meaningless)
+g <- ro_transfer(f, dest_oc = object_cache_alt_cachem("test2"))
+
+g <- ro_transfer(f, dest_oc = object_cache_alt_cachem("test2/rf"), new_root = "test2")
+
+
+ft <- function(x){
+  environment(x)$`_fun_etc` < "hi"
+  invisible(0)
+}
 
 
 f0 <- function(x=4,
@@ -12,6 +38,9 @@ ft <- function(x){
   # mc <- match.call()
   # length(mc[[2]])
   y <- deparse(substitute(x))
+  print(y)
+  print(match.call())
+  browser()
   grepl("\\(",y)
 }
 

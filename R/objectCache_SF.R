@@ -52,6 +52,20 @@ get_object_SF <- function(
     save_rds(lv, vf)
   }
   sf$set <- sequentialize(sf_set, root_path = file.path(path, "seq"))
+  # special set case not using sequentialize
+  sf$multi_set <- function(key, value){
+    key_h <- unlist(lapply(key, hash_it))
+    lk <- read_rds(kf)
+    lv <- read_rds(vf)
+    oldnm <- setdiff(names(lk), key_h)
+    names(key) <- key_h
+    names(value) <- key_h
+    lkn <- c(lk[oldnm],key)
+    lvn <- c(lv[oldnm],value)
+    save_rds(lkn, kf)
+    save_rds(lvn, vf)
+  }
+
   sf$get <- function(key){
     key_h <- hash_it(key)
     lv <- read_rds(vf)
@@ -99,6 +113,10 @@ get_object_SF <- function(
     save_rds(list(), vf)
   }
   sf$reset <- sequentialize(sf_reset, root_path = file.path(path, "seq"))
+
+  sf$meta <- function(){
+    list(type = "SF")
+  }
 
   sf
 

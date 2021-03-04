@@ -108,7 +108,9 @@ adapter_object_cache_from_object_cachem <- function(object_cachem){
   oc$destroy <- object_cachem$destroy
   oc$reset <- object_cachem$reset
   oc$relocate <- object_cachem$relocate
-
+  oc$meta = function(){
+    list(type = "cachem")
+  }
 
   oc
 

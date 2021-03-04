@@ -122,19 +122,8 @@ get_object_storr <- function(
 
 }
 
-# to use thor
-# get_object_storr(
-#   path,
-#   key_storr = function(path){
-#     thor::storr_thor(thor::mdb_env(file.path(path, "keys")))
-#   },
-#   value_storr = function(path){
-#     thor::storr_thor(thor::mdb_env(file.path(path, "values")))
-#   }
-# )
-#
-
-adapter_object_cache_from_object_storr <- function(object_storr){
+adapter_object_cache_from_object_storr <- function(
+  object_storr, meta_type = "storr"){
 
   oc <- object_cache_empty()
 
@@ -147,6 +136,16 @@ adapter_object_cache_from_object_storr <- function(object_storr){
   oc$destroy <- object_storr$destroy
   oc$reset <- object_storr$reset
   oc$relocate <- object_storr$relocate
+  if(meta_type == "thor"){
+    oc$meta = function(){
+      list(type = "thor")
+    }
+  }else{
+    oc$meta = function(){
+      list(type = "storr")
+    }
+  }
+
 
   oc
 }
@@ -187,7 +186,8 @@ object_cache_alt_thor <- function(path){
         thor::storr_thor(thor::mdb_env(file.path(path, "values")))
       },
       sequentialize_set = TRUE
-    )
+    ),
+    meta_type = "thor"
   )
 }
 

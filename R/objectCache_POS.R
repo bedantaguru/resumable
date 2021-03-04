@@ -110,6 +110,9 @@ adapter_object_cache_from_object_POS <- function(object_POS){
   oc$destroy <- object_POS$destroy
   oc$reset <- object_POS$reset
   oc$relocate <- object_POS$relocate
+  oc$meta = function(){
+    list(type = "POS")
+  }
 
   oc
 }

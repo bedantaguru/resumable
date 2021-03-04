@@ -38,7 +38,7 @@ resumable_operations <- function(){
     ro_transfer(rf, dest_oc, new_root)
   }
 
-  lo$convert <- function(resf, new_oc){
+  lo$convert <- function(rf, new_oc){
     "This will convert the storage backend"
     ro_convert(rf, new_oc)
   }

@@ -100,6 +100,9 @@ adapter_object_cache_from_object_memoise <- function(object_memoise){
   oc$destroy <- object_memoise$destroy
   oc$reset <- object_memoise$reset
   oc$relocate <- object_memoise$relocate
+  oc$meta = function(){
+    list(type = "memoise")
+  }
 
   oc
 }

@@ -31,6 +31,9 @@ object_cache_empty <- function(){
     },
     relocate = function(move_to){
       invisible(NULL)
+    },
+    meta = function(){
+      list(type = "empty")
     }
   )
 }
@@ -46,9 +49,14 @@ object_cache <- function(path = tempfile("object_cache"), use, ...){
 
 object_cache_copy <- function(oc_src, oc_dest, iterator = lapply){
   ks <- oc_src$list_keys()
-  iterator(ks, function(x){
-    oc_dest$set(x, oc_src$get(x))
-  })
+  if(isTRUE(oc_dest$meta()$type=="SF")){
+    # special case of SF
+    oc_dest$multi_set(ks, oc_src$list_values())
+  }else{
+    iterator(ks, function(x){
+      oc_dest$set(x, oc_src$get(x))
+    })
+  }
   invisible(0)
 }
 

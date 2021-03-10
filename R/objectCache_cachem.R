@@ -119,9 +119,16 @@ adapter_object_cache_from_object_cachem <- function(object_cachem){
 
 
 object_cache_alt_cachem <- function(path){
-  adapter_object_cache_from_object_cachem(
-    get_object_cachem(path)
-  )
+
+  trails_object_cache(
+    path,
+    ocf = function(path){
+      adapter_object_cache_from_object_cachem(
+        get_object_cachem(path)
+      )
+    } ,
+    oc_type = "cachem")
+
 }
 
 object_cache_altMeta_cachem <- function(){

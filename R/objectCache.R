@@ -46,7 +46,6 @@ object_cache <- function(path = tempfile("object_cache"), use, ...){
 }
 
 
-
 object_cache_copy <- function(oc_src, oc_dest, iterator = lapply){
   ks <- oc_src$list_keys()
   if(isTRUE(oc_dest$meta()$type=="SF")){
@@ -90,4 +89,55 @@ is_object_cache <- function(x){
     error = function(e) FALSE
   )
   res
+}
+
+
+trails_getset_object_cache <- function(path, oc){
+  ocn <- file.path(path, "oc")
+  if(file.exists(ocn)){
+
+    ot <- tryCatch(
+      readRDS(ocn),
+      error = function(e) NULL
+    )
+
+    if(is_object_cache(ot)){
+      return(ot)
+    }else{
+      stop("Old OC file may be corrupted/wrongly configured", call. = FALSE)
+    }
+
+  }else{
+    if(!missing(oc)){
+      saveRDS(oc, ocn)
+    }
+  }
+  invisible("no_trail")
+}
+
+
+trails_object_cache <- function(path, ocf, oc_type){
+  toc <- trails_getset_object_cache(path)
+  if(identical(toc,"no_trail")){
+    oc <- ocf(path)
+    trails_getset_object_cache(path, oc)
+  }else{
+    cat(paste0(
+      "Old object_cache found the path: ", path, "\n"
+    ))
+
+    if(toc$meta()$type!=oc_type){
+      warning(
+        paste0("Desired object_cache in path:",
+               path, " is ", oc_type,
+               "\nWhile the old object_cache in the same path is:",
+               toc$meta()$type,
+               "\nMake sure that this is what you expected.\n",
+               "You may clean old object_cache by destroying it.\n"),
+        call. = FALSE
+      )
+    }
+
+    oc <- toc
+  }
 }

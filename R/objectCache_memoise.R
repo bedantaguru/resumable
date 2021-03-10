@@ -110,9 +110,16 @@ adapter_object_cache_from_object_memoise <- function(object_memoise){
 
 
 object_cache_alt_memoise <- function(path){
-  adapter_object_cache_from_object_memoise(
-    get_object_memoise(path)
-  )
+
+  trails_object_cache(
+    path,
+    ocf = function(path){
+      adapter_object_cache_from_object_memoise(
+        get_object_memoise(path)
+      )
+    } ,
+    oc_type = "memoise")
+
 }
 
 object_cache_altMeta_memoise <- function(){

@@ -126,7 +126,13 @@ get_object_SF <- function(
 
 
 object_cache_alt_SF <- function(path){
-  get_object_SF(path)
+  trails_object_cache(
+    path,
+    ocf = function(path){
+      get_object_SF(path)
+    } ,
+    oc_type = "SF")
+
 }
 
 object_cache_altMeta_SF <- function(){

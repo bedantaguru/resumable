@@ -119,7 +119,13 @@ adapter_object_cache_from_object_POS <- function(object_POS){
 
 
 object_cache_alt_POS <- function(path){
-  adapter_object_cache_from_object_POS(get_object_POS(path))
+
+  trails_object_cache(
+    path,
+    ocf = function(path){
+      adapter_object_cache_from_object_POS(get_object_POS(path))
+    } ,
+    oc_type = "POS")
 }
 
 object_cache_altMeta_POS <- function(){

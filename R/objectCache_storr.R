@@ -153,9 +153,16 @@ adapter_object_cache_from_object_storr <- function(
 
 
 object_cache_alt_storr <- function(path){
-  adapter_object_cache_from_object_storr(
-    get_object_storr(path)
-  )
+
+  trails_object_cache(
+    path,
+    ocf = function(path){
+      adapter_object_cache_from_object_storr(
+        get_object_storr(path)
+      )
+    } ,
+    oc_type = "storr")
+
 }
 
 object_cache_altMeta_storr <- function(){
@@ -176,19 +183,26 @@ object_cache_altMeta_storr <- function(){
 
 
 object_cache_alt_thor <- function(path){
-  adapter_object_cache_from_object_storr(
-    get_object_storr(
-      path,
-      key_storr = function(path){
-        thor::storr_thor(thor::mdb_env(file.path(path, "keys")))
-      },
-      value_storr = function(path){
-        thor::storr_thor(thor::mdb_env(file.path(path, "values")))
-      },
-      sequentialize_set = TRUE
-    ),
-    meta_type = "thor"
-  )
+
+  trails_object_cache(
+    path,
+    ocf = function(path){
+      adapter_object_cache_from_object_storr(
+        get_object_storr(
+          path,
+          key_storr = function(path){
+            thor::storr_thor(thor::mdb_env(file.path(path, "keys")))
+          },
+          value_storr = function(path){
+            thor::storr_thor(thor::mdb_env(file.path(path, "values")))
+          },
+          sequentialize_set = TRUE
+        ),
+        meta_type = "thor"
+      )
+    } ,
+    oc_type = "thor")
+
 }
 
 object_cache_altMeta_thor <- function(){

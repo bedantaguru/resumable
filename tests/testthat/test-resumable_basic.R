@@ -120,9 +120,16 @@ test_that("basic things works", {
       # call once to save
       expect_output(fr3.1(1), "calc")
 
-      fr3.2 <- resumable(f0_NL,
-                         no_function_footprint = TRUE,
-                         root_path = ".test")
+      options(resumable_log_level = "info")
+
+      expect_output(
+        fr3.2 <- resumable(f0_NL,
+                           no_function_footprint = TRUE,
+                           root_path = ".test"),
+        "object_cache found in the path")
+
+      options(resumable_log_level = NULL)
+
       o1 <- capture_output(fr3.2(1))
       expect_false(grepl("calc", o1))
       expect_equal(fr3.2(1), 1)

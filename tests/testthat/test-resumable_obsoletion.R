@@ -28,10 +28,24 @@ test_that("obsoletion works", {
 
       skip_on_cran()
 
+
       # based on time since creation
-      fr <- resumable(
-        f0,
-        obsolete_if = ~difftime(Sys.time(),.x, units = "sec")>0.1)
+      if(bn=="thor"){
+        # create_time,
+        # num_times_used,
+        # last_used_time,
+        # extra$val,
+        # extra$eval_time
+        # Below means create time to current time - eval time is higher than 0.1
+        fr <- resumable(
+          f0,
+          obsolete_if = ~difftime(Sys.time(),.x, units = "sec")>0.15+..5)
+      }else{
+        fr <- resumable(
+          f0,
+          obsolete_if = ~difftime(Sys.time(),.x, units = "sec")>0.1)
+      }
+
       expect_output(fr(5),"calc")
       expect_failure(expect_output(fr(5),"calc"))
       Sys.sleep(0.15)

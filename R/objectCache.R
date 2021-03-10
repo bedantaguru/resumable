@@ -104,7 +104,10 @@ trails_getset_object_cache <- function(path, oc){
     if(is_object_cache(ot)){
       return(ot)
     }else{
-      stop("Old OC file may be corrupted/wrongly configured", call. = FALSE)
+      stop(paste0(
+        "Old OC file may be corrupted/wrongly configured.",
+        " Clear the path:",path
+      ), call. = FALSE)
     }
 
   }else{
@@ -122,9 +125,14 @@ trails_object_cache <- function(path, ocf, oc_type){
     oc <- ocf(path)
     trails_getset_object_cache(path, oc)
   }else{
-    cat(paste0(
-      "Old object_cache found the path: ", path, "\n"
-    ))
+
+    if(isTRUE(getOption("resumable_log_level")=="info")){
+      cat(paste0(
+        "Old object_cache found in the path: ", path,
+        " - using the same.\n"
+      ))
+    }
+
 
     if(toc$meta()$type!=oc_type){
       warning(
@@ -140,4 +148,6 @@ trails_object_cache <- function(path, ocf, oc_type){
 
     oc <- toc
   }
+
+  oc
 }

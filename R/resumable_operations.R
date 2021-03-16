@@ -3,56 +3,65 @@
 resumable_operations <- function(){
   lo <- list()
 
-  lo$list_cached_args <- function(rf){
+  lo$list_cached_args <- function(rfun){
     "This is to list cached arguments"
-    ro_list_cached_args(rf)
+    ro_list_cached_args(rfun)
   }
 
-  lo$list_cached_function_values <- function(){
+  lo$list_cached_function_values <- function(rfun){
     "This is for listing cached values"
-    ro_list_cached_function_values(rf)
+    ro_list_cached_function_values(rfun)
   }
 
-  lo$eraser <- function(rf){
+  lo$eraser <- function(rfun){
     "It will return another resumable function which will remove cached values"
-    ro_eraser()
+    ro_eraser(rfun)
   }
 
-  lo$forget <- function(rf){
+  lo$forget <- function(rf_exp){
     "Either function or a function with argument can be passed to reset"
-    ro_forget(rf)
+    ro_forget(enquote(rf_exp), environment())
   }
 
-  lo$aggregate <- function(rf, aggregator = lapply){
+  lo$aggregate <- function(rfun, aggregator = lapply){
     "It will aggregate all cached output by the resumable function"
-    ro_aggregate(rf, aggregator)
+    ro_aggregate(rfun, aggregator)
   }
 
-  lo$destroy <- function(rf){
+  lo$destroy <- function(rfun){
     "It will destroy resumable function folder"
-    ro_destroy(rf)
+    ro_destroy(rfun)
   }
 
-  lo$transfer <- function(rf, dest_oc, new_root){
+  lo$transfer <- function(rfun, dest_oc, new_root){
     "It will transfer resumable function to new OC or new root_path"
-    ro_transfer(rf, dest_oc, new_root)
+    ro_transfer(rfun, dest_oc, new_root)
   }
 
-  lo$convert <- function(rf, new_oc){
+  lo$convert <- function(rfun, new_oc){
     "This will convert the storage backend"
-    ro_convert(rf, new_oc)
+    ro_convert(rfun, new_oc)
   }
   lo
 }
 
 ro_list_cached_args <- function(resf){
   ee <- environment(resf)
-  ee$`_fun_oc`$list_keys()
+  if(isTRUE(ee$`_fun_with_meta`)){
+    ee$`_fun_meta_list_args`()
+  }else{
+    ee$`_fun_oc`$list_keys()
+  }
 }
 
 ro_list_cached_function_values <- function(resf){
   ee <- environment(resf)
-  ee$`_fun_oc`$list_values()
+  if(isTRUE(ee$`_fun_with_meta`)){
+    lv <- ee$`_fun_meta_list_args`(values = TRUE)
+  }else{
+    lv <- ee$`_fun_oc`$list_values()
+  }
+  lapply(lv, `[[`, "value")
 }
 
 ro_eraser <- function(resf){
@@ -76,8 +85,8 @@ ro_eraser <- function(resf){
   resf
 }
 
-ro_forget <- function(rf_exp){
-  fe <- substitute(rf_exp)
+ro_forget <- function(rf_exp, env = environment()){
+  fe <- substitute(rf_exp, env)
   fec <- deparse(fe)
   if(grepl("\\(",fec)){
     # remove specific argument
@@ -86,9 +95,10 @@ ro_forget <- function(rf_exp){
     de[[2]] <- fe[[2]]
     eval(de)
   }else{
+    rf_get <- eval(fe)
     # reset whole function
-    if(is_resumable(rf_exp) & is.function(rf_exp)){
-      ee <- environment(rf_exp)
+    if(is_resumable(rf_get) & is.function(rf_get)){
+      ee <- environment(rf_get)
       ee$`_fun_oc`$reset()
     }
   }

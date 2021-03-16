@@ -148,5 +148,20 @@ test_that("basic things works", {
 
   }
 
+  expect_output(
+    print(fr),
+    "Resumable Function"
+  )
+
+  expect_output(
+    print(fr, details = TRUE),
+    "cached arguments"
+  )
+
+  expect_output(
+    print(resumable(resumable), details = TRUE),
+    "..."
+  )
+
 })
 

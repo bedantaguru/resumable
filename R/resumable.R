@@ -319,7 +319,7 @@ resumable <- function(fun,
       l
     }
 
-    meta_list_args <- function(){
+    meta_list_args <- function(values = FALSE){
       ks <- foc$list_keys()
       ksh <- lapply(ks, hash_it)
       is_key <- lapply(ks, function(x){
@@ -327,7 +327,11 @@ resumable <- function(fun,
         argk <- list(`_args` = hash_it(x))
         any(ksh==hash_it(argk))
       })
-      ks[unlist(is_key)]
+      if(values){
+        foc$list_values()[unlist(is_key)]
+      }else{
+        ks[unlist(is_key)]
+      }
     }
 
   }

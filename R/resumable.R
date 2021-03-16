@@ -3,12 +3,14 @@ resumable <- function(fun,
                       root_path,
                       env = environment(fun),
                       eval_args_before_caching = TRUE,
+                      apply_arg_filter_on_eval = TRUE,
                       impactless_args = NULL,
                       clean_root_path_on_creation = FALSE,
                       no_function_footprint = FALSE,
                       skip_if = function(
                         fun_val,
                         fun_eval_time){FALSE},
+                      with_meta_info = NULL,
                       obsolete_if = function(
                         create_time,
                         num_times_used,
@@ -16,9 +18,68 @@ resumable <- function(fun,
                         fun_val,
                         fun_eval_time){FALSE}) {
 
-  if(missing(fun)){
+  if(missing(fun) & missing(root_path)){
     # No functions supplied returning resumable operations
     return(resumable_operations())
+  }
+
+  static_footprint <- "rf"
+  save_function_for_trails <- TRUE
+  trails_predict_args <- FALSE
+
+  if(missing(fun) & !missing(root_path)){
+    # re-fetch mode
+    chk <- FALSE
+    if(dir.exists(root_path)){
+      if(length(list.files(root_path))>0){
+        chk <- TRUE
+      }
+    }
+
+    if(chk){
+      # re-fetch mode
+      # two option either read fr (if present)
+      # or create a dummy function for reading cached values
+
+      fmod_fn <- file.path(root_path, "fr")
+
+      if(file.exists(fmod_fn)){
+        return(readRDS(fmod_fn))
+      }
+
+      # in other case look for function cache
+      fls <- list.files(root_path)
+      fls <- setdiff(fls, "fr")
+      fls_info <- file.info(file.path(root_path, fls))
+
+      this_fold <- fls[order(fls_info$mtime, decreasing = TRUE)]
+      this_fold <- this_fold[1]
+
+      static_footprint <- this_fold
+
+      no_function_footprint <- TRUE
+
+      save_function_for_trails <- FALSE
+
+      trails_predict_args <- TRUE
+
+      fun <- function(...){
+        stop(paste0(
+          "This is a dummy function. ",
+          "It is used only for fetching already ",
+          "cached values via resumable_operations."
+        ), call. = FALSE)
+      }
+
+
+    }else{
+      stop(paste0(
+        "The root_path:", root_path,
+        " contains no valid way of fetching earlier used function."
+      ), call. = FALSE)
+    }
+
+
   }
 
   if(is_available("rlang")){
@@ -31,20 +92,34 @@ resumable <- function(fun,
     stop("resumable is meant for a function.", call. = FALSE)
   }
 
-  lval <- as.list(body(obsolete_if))
-  lval <- lval[[length(lval)]]
-
   with_meta_info_in_oc <- TRUE
-  if(lval==FALSE){
-    with_meta_info_in_oc <- FALSE
+
+  if(!is.logical(with_meta_info)){
+    # detect by analyzing body or calling obsolete_if
+    lval <- as.list(body(obsolete_if))
+    lval <- lval[[length(lval)]]
+
+    if(isFALSE(lval)){
+      with_meta_info_in_oc <- FALSE
+    }else{
+      # try to evaluate obsolete_if without any argument
+      run_test <- tryCatch(
+        obsolete_if(),
+        error = function(e) TRUE
+      )
+      if(isFALSE(run_test)){
+        with_meta_info_in_oc <- FALSE
+      }
+    }
+  }else{
+    with_meta_info_in_oc <- isTRUE(with_meta_info[1])
   }
+
 
   if(is_resumable(fun)){
     cat("Already resumable\n")
     return(fun)
   }
-
-  fun_formals <- formals(fun)
 
   # re-construct resumable function
   # Note: this has to sync ro_eraser edits
@@ -70,6 +145,9 @@ resumable <- function(fun,
     if(encl_env$`_fun_eval_args`){
       final_args <- c(lapply(f_called_args, eval, parent.frame()),
                       lapply(f_default_args, eval, envir = environment()))
+      if(encl_env$`_fun_arg_filter`){
+        final_args <- encl_env$`_fun_arg_filter_function`(final_args)
+      }
 
     }else{
       final_args <- c(f_called_args,
@@ -154,10 +232,9 @@ resumable <- function(fun,
     }
   }
 
-  formals(fmod) <- fun_formals
 
   if(no_function_footprint){
-    fh <- "rf"
+    fh <- static_footprint
   }else{
     fh <- function_hash(fun)
   }
@@ -174,6 +251,26 @@ resumable <- function(fun,
   path <- file.path(root_path, fh)
 
   foc <- object_cache(path)
+
+  if(trails_predict_args){
+    olargs_al <- formals(fun)
+    tryCatch({
+      olk <- foc$list_keys()
+      olargs <- unique(unlist(lapply(olk, names)))
+      olargs_al <- eval(
+        parse(text =
+                paste0("alist(",
+                       paste0("`",olargs, "`=", collapse = ","),")")))
+    }, error = function(e) NULL)
+
+    if(is.list(olargs_al)){
+      formals(fun) <- olargs_al
+    }
+  }
+
+  # put args
+  fun_formals <- formals(fun)
+  formals(fmod) <- fun_formals
 
   dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
@@ -237,6 +334,7 @@ resumable <- function(fun,
 
   res_fun_env <- new.env(parent = env)
   res_fun_env$`_fun_root_path` <- root_path
+  res_fun_env$`_fun_root_path_abs` <- normalizePath(root_path)
   res_fun_env$`_fun_oc` <- foc
   res_fun_env$`_fun_oc_path` <- path
   res_fun_env$`_fun` <- fun
@@ -244,6 +342,10 @@ resumable <- function(fun,
     function(x) !identical(x, quote(expr = )), fun_formals)
   res_fun_env$`_fun_impactless_args` <- impactless_args
   res_fun_env$`_fun_eval_args` <- eval_args_before_caching
+  res_fun_env$`_fun_arg_filter` <- apply_arg_filter_on_eval
+  if(apply_arg_filter_on_eval){
+    res_fun_env$`_fun_arg_filter_function` <- arg_filter
+  }
   res_fun_env$`_fun_skip_if` <- skip_if
   res_fun_env$`_fun_with_meta` <- with_meta_info_in_oc
 
@@ -257,6 +359,15 @@ resumable <- function(fun,
   environment(fmod) <- res_fun_env
   class(fmod) <- c("resumable","function")
   attr(fmod, "resumable") <- TRUE
+
+  # save fmod for future use (only last function is saved)
+  # file name for storing "last" resumable function in root_path
+  if(save_function_for_trails){
+    fmod_fn <- file.path(root_path, "fr")
+
+    saveRDS(fmod, fmod_fn)
+  }
+
 
   fmod
 
@@ -304,7 +415,8 @@ print.resumable <- function(x, ..., details = FALSE) {
       }else{
         if(is_available("prettycode")){
           pcns <- asNamespace("prettycode")
-          pcns$print.function(environment(x)$`_fun`)
+          use_src <- inherits(getSrcref(environment(x)$`_fun`), "srcref")
+          pcns$print.function(environment(x)$`_fun`, useSource = use_src)
         }else{
           print(environment(x)$`_fun`)
         }

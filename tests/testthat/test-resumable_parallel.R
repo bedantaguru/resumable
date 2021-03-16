@@ -26,6 +26,7 @@ test_that("parallel works", {
       parallel::clusterApply(cl, 1:10, fr)
 
       oc <- environment(fr)$`_fun_oc`
+
       expect_equal(as.numeric(sort(unlist(oc$list_keys()))), 1:10)
 
       o0 <- capture_output(expect_equal(sapply(1:10, fr), (1:10)^2))

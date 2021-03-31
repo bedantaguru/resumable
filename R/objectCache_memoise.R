@@ -69,7 +69,31 @@ get_object_memoise <- function(
     invisible(0)
   }
 
-  # mem$remove method not present
+  # mem$remove method not present but creating
+  # However, it will not be applicable always
+  # In dev version drop_key is present
+  mem$remove <- function(key){
+    key_h <- memk$digest(key)
+
+    if(!is.null(memk$drop_key)){
+      memk$drop_key(key_h)
+    }else{
+      kf <- file.path(file.path(path, "keys"), key_h)
+      if(file.exists(kf)){
+        file.remove(kf)
+      }
+    }
+
+    if(!is.null(memv$drop_key)){
+      memv$drop_key(key_h)
+    }else{
+      vf <- file.path(file.path(path, "values"), key_h)
+      if(file.exists(vf)){
+        file.remove(vf)
+      }
+    }
+
+  }
 
   mem$destroy <- function(){
     if(!is.null(path)){
@@ -96,7 +120,8 @@ adapter_object_cache_from_object_memoise <- function(object_memoise){
   oc$get <- object_memoise$get
   oc$list_keys <- object_memoise$keys
   oc$list_values <- object_memoise$list_values
-  # remove method not present : oc$remove <- object_memoise$remove
+  # generated method (may be weak)
+  oc$remove <- object_memoise$remove
   oc$destroy <- object_memoise$destroy
   oc$reset <- object_memoise$reset
   oc$relocate <- object_memoise$relocate

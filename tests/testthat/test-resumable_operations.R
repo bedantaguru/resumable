@@ -95,6 +95,8 @@ test_that("resumable_operations works", {
 
     fr3 <- ro$convert(fr, now_bk$name)
 
+    # fr3 and fr2 should be equivalent
+
   }
 
 })

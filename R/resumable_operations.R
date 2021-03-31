@@ -93,9 +93,9 @@ ro_forget <- function(rf_exp, env = environment()){
     de <- substitute(ro_eraser(f)(arg))
     de[[1]][[2]] <- fe[[1]]
     de[[2]] <- fe[[2]]
-    eval(de)
+    eval(de, envir = parent.frame(2))
   }else{
-    rf_get <- eval(fe)
+    rf_get <- eval(fe, envir = parent.frame(2))
     # reset whole function
     if(is_resumable(rf_get) & is.function(rf_get)){
       ee <- environment(rf_get)
